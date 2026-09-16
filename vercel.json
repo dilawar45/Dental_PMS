@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "turbo build --filter=@dental-pms/web",
+  "outputDirectory": "apps/web/.next"
+}

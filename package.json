@@ -19,6 +19,9 @@
     "prettier": "^3",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
-    "eslint": "^8"
+    "eslint": "^8",
+    "next": "^15",
+    "react": "^18",
+    "react-dom": "^18"
   }
 }
