@@ -5,6 +5,8 @@ import { clinics } from '@dental-pms/db/schema';
 import { eq } from 'drizzle-orm';
 import { AppShell } from '@/components/layout/app-shell';
 
+import { redirect } from 'next/navigation';
+
 export default async function AuthenticatedAppLayout({
   children,
 }: {
@@ -19,7 +21,7 @@ export default async function AuthenticatedAppLayout({
   });
 
   if (!clinic) {
-    throw new Error(`Data integrity violation: Clinic ${clinicId} not found.`);
+    redirect('/login');
   }
 
   return (

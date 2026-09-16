@@ -23,7 +23,7 @@ function LoginForm() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -126,8 +126,8 @@ function LoginForm() {
 
           {/* Development Quick-Fill Helpers */}
           <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5 text-center">
-              Dev Fast Login (Password: DevPassword123!)
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2.5 text-center">
+              <span className="font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Dev Quick Login</span> · Password: <code className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">DevPassword123!</code>
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button

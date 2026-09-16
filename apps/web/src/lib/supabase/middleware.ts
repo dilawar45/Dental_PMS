@@ -14,7 +14,7 @@ export async function updateSession(request: NextRequest) {
     process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'https://rxoqmiwuwkywxxtkyjma.supabase.co';
   const supabaseAnonKey =
     process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder-anon-key';
+    'sb_publishable__m9hSfifahzrnCOp4a6jMQ_dI017Q1d';
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -35,10 +35,16 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh auth token
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh auth token safely
+  let user = null;
+  try {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  } catch {
+    user = null;
+  }
 
   const isLoginPage = request.nextUrl.pathname === '/login';
   const isAuthCallback = request.nextUrl.pathname.startsWith('/auth');

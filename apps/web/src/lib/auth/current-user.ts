@@ -34,10 +34,9 @@ export async function getCurrentUser(): Promise<CurrentUserContext | null> {
     .from(users)
     .where(eq(users.id, authUser.id));
 
-  if (!profile) {
-    throw new Error(
-      `Data integrity violation: Authenticated user ${authUser.id} (${authUser.email}) has no matching record in public.users.`
-    );
+  if (!profile || !profile.active) {
+    // User profile missing or deactivated by administrator
+    return null;
   }
 
   return {

@@ -8,7 +8,12 @@ import * as schema from './schema';
  * Uses the `postgres` driver with Drizzle ORM.
  */
 export function createDb(url: string) {
-  const client = postgres(url);
+  const client = postgres(url, {
+    ssl: url.includes('localhost') ? false : 'require',
+    max: 10,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  });
   return drizzle(client, { schema });
 }
 

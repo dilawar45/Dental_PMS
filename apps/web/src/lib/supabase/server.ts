@@ -12,7 +12,7 @@ export async function createClient() {
     process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'https://rxoqmiwuwkywxxtkyjma.supabase.co';
   const supabaseAnonKey =
     process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.placeholder-anon-key';
+    'sb_publishable__m9hSfifahzrnCOp4a6jMQ_dI017Q1d';
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
