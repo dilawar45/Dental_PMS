@@ -21,8 +21,6 @@ dental-pms/
 │       ├── storage/        Mock ↔ Supabase/S3
 │       ├── pdf/            Mock ↔ PDF library
 │       └── ai/             Mock ↔ Claude/OpenAI
-└── tooling/
-    └── docker-compose.yml  → PostgreSQL 16 + Redis 7
 ```
 
 ## Prerequisites
@@ -30,7 +28,6 @@ dental-pms/
 - **Node.js** ≥ 22
 - **pnpm** (enabled via corepack: `corepack enable pnpm`)
 - **Python** ≥ 3.11
-- **Docker** + Docker Compose
 
 ## Quick Start
 
@@ -96,8 +93,6 @@ GitHub Actions runs on every push/PR to `main`:
 | `pnpm build` | Build all packages |
 | `pnpm typecheck` | TypeScript strict check across all packages |
 | `pnpm lint` | Lint all packages |
-| `pnpm docker:up` | Start Postgres + Redis via Docker Compose |
-| `pnpm docker:down` | Stop Docker services |
 | `pnpm db:generate` | Generate Drizzle migration files |
 | `pnpm db:migrate` | Apply migrations |
 | `pnpm db:seed` | Seed demo data |

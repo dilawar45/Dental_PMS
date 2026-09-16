@@ -11,8 +11,6 @@
     "db:generate": "pnpm --filter @dental-pms/db generate",
     "db:migrate": "pnpm --filter @dental-pms/db migrate",
     "db:seed": "pnpm --filter @dental-pms/db seed",
-    "docker:up": "docker compose -f tooling/docker-compose.yml up -d",
-    "docker:down": "docker compose -f tooling/docker-compose.yml down",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "devDependencies": {
