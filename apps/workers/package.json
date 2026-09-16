@@ -1,0 +1,25 @@
+{
+  "name": "@dental-pms/workers",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/serve.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "inngest": "^3",
+    "hono": "^4",
+    "@hono/node-server": "^1",
+
+    "@dental-pms/db": "workspace:*",
+    "@dental-pms/types": "workspace:*",
+    "@dental-pms/integrations": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6",
+    "tsx": "^4",
+    "@types/node": "^22"
+  }
+}
