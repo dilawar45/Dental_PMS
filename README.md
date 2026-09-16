@@ -43,24 +43,9 @@ cp .env.example .env
 pnpm install
 ```
 
-### 2. Start Docker services
-
-```bash
-pnpm docker:up
-# Starts PostgreSQL (5432) + Redis (6379)
-```
-
-### 3. Run database migrations and seed
-
-```bash
-pnpm db:generate   # Generate Drizzle migration files
-pnpm db:migrate    # Apply migrations to PostgreSQL
-pnpm db:seed       # Insert demo clinic + staff users + sample data
-```
-
 #### Dev Staff Credentials (Development Only)
 
-All seeded staff accounts share the default development password: **`DevPassword123!`**
+All seeded staff accounts share the default development.
 
 | Name | Role | Email | Permissions |
 | :--- | :--- | :--- | :--- |
@@ -68,45 +53,6 @@ All seeded staff accounts share the default development password: **`DevPassword
 | **Dr. Ayesha Khan** | `dentist` | `dr.ayesha@brightsmile.pk` | Patients, clinical charts, scheduled appointments |
 | **Sana Ali** | `receptionist` | `sana.reception@brightsmile.pk` | Booking queue, appointments, patient check-in, invoices |
 | **Bilal Ahmed** | `assistant` | `assistant@brightsmile.com` | Patient records, appointment viewing |
-
-### 4. Start the web app
-
-```bash
-cd apps/web
-pnpm dev
-# → http://localhost:3000
-```
-
-### 5. Start the agent service
-
-```bash
-cd apps/agent
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-# → http://localhost:8000/docs
-```
-
-### 6. Test the dev simulator
-
-```bash
-curl -X POST http://localhost:8000/dev/simulate-inbound \
-  -H "Content-Type: application/json" \
-  -d '{
-    "channel": "whatsapp",
-    "from": "+1234567890",
-    "body": "I need to book a dental cleaning"
-  }'
-```
-
-**Expected response:**
-
-```json
-{
-  "reply": "[Dev Agent] Received your message on whatsapp: \"I need to book a dental cleaning\". This is a simulated response. Connect a real AI provider to get intelligent replies.",
-  "channel": "whatsapp",
-  "logged": true
-}
-```
 
 ## Provider Abstraction
 
