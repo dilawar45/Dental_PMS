@@ -6,7 +6,7 @@
     "dev": "tsx watch src/serve.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "inngest": "^3",

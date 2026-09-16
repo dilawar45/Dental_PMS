@@ -14,7 +14,7 @@
     "seed": "tsx src/seed.ts",
     "test:rls": "tsx src/test-rls.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
