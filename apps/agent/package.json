@@ -16,6 +16,7 @@
     "@dental-pms/types": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.36",
     "hono": "^4.6.14",
     "ioredis": "^5.4.2",
     "zod": "^3.24.1"

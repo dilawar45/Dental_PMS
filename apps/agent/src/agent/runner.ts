@@ -4,8 +4,7 @@
 
 import { config } from '../config';
 import type { LLMProvider, Message } from '../llm/base';
-import { NotImplementedError } from '../llm/base';
-import type { Session, SessionStore } from '../session/base';
+import type { SessionStore } from '../session/base';
 import { TOOL_REGISTRY, dispatchTool } from './registry';
 import { getSystemPrompt } from './system-prompt';
 
@@ -25,6 +24,13 @@ export interface InboundResult {
   channel: string;
   logged: boolean;
 }
+
+const MUTATION_TOOLS = new Set([
+  'create_patient',
+  'create_booking_request',
+  'request_human_handoff',
+  'send_receipt',
+]);
 
 export class AgentRunner {
   constructor(
@@ -82,25 +88,85 @@ export class AgentRunner {
       from: sender,
     };
 
-    // 5. Dispatch tools (in Phase 5A, dispatch catches NotImplementedError and logs intent)
+    const mutationConfirmations: string[] = [];
+    let toolFailureOccurred = false;
+
+    // 5. Dispatch tools in order
     if (toolCalls.length > 0) {
       for (const tc of toolCalls) {
         executedTools.push(tc.name);
-        try {
-          await dispatchTool(tc.name, tc.arguments, toolContext);
-        } catch (err) {
-          if (err instanceof NotImplementedError) {
-            console.log(`[Phase 5A Intent] Tool '${tc.name}' intent recognized.`);
-          } else {
-            console.error(`Tool '${tc.name}' execution error:`, err);
+        const result = await dispatchTool(tc.name, tc.arguments, toolContext);
+
+        if (!result.ok) {
+          toolFailureOccurred = true;
+          console.error(`Tool '${tc.name}' execution failed: ${result.error}`);
+          break;
+        }
+
+        // Collect confirmation message for mutations
+        if (MUTATION_TOOLS.has(tc.name)) {
+          const resObj = result as Record<string, unknown>;
+          if (typeof resObj['message'] === 'string' && resObj['message'].trim().length > 0) {
+            mutationConfirmations.push(resObj['message'].trim());
+          } else if (tc.name === 'create_patient' && resObj['full_name']) {
+            mutationConfirmations.push(
+              `Patient record created for ${resObj['full_name']}.`
+            );
           }
         }
       }
+
+      // If any tool returned ok=false, trigger safe fallback + auto request_human_handoff
+      if (toolFailureOccurred) {
+        const fallbackChannel = ['whatsapp', 'voice', 'instagram', 'facebook', 'google'].includes(
+          channel
+        )
+          ? (channel as 'whatsapp' | 'voice' | 'instagram' | 'facebook' | 'google')
+          : 'whatsapp';
+
+        executedTools.push('request_human_handoff');
+        await dispatchTool(
+          'request_human_handoff',
+          {
+            reason: 'Tool failure fallback',
+            urgency: 'normal',
+            channel: fallbackChannel,
+          },
+          toolContext
+        );
+
+        const safeFallbackMessage =
+          'I apologize, but I encountered an issue fulfilling your request. I have alerted our clinic reception team, and someone will follow up with you promptly.';
+
+        session.history.push({
+          role: 'assistant',
+          content: safeFallbackMessage,
+          timestamp: new Date().toISOString(),
+        });
+
+        await this.sessionStore.set(session);
+
+        return {
+          reply: safeFallbackMessage,
+          tool_intent: executedTools[0] ?? null,
+          tool_intents: executedTools,
+          session_id: convId,
+          channel,
+          logged: true,
+        };
+      }
     }
 
-    const replyText =
-      response.text ||
-      'Hello! I am the AI Receptionist at Bright Smile Dental. How can I assist you with your dental care today?';
+    let replyText = response.text || '';
+    if (mutationConfirmations.length > 0) {
+      const confirmations = mutationConfirmations.join(' ');
+      replyText = replyText ? `${replyText}\n\n${confirmations}` : confirmations;
+    }
+
+    if (!replyText) {
+      replyText =
+        'Hello! I am the AI Receptionist at Bright Smile Dental. How can I assist you with your dental care today?';
+    }
 
     // 6. Append assistant message to session history
     session.history.push({

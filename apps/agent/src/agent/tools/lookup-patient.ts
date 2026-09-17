@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { NotImplementedError, type ToolSpec } from '../../llm/base';
+import { eq, and, isNull } from 'drizzle-orm';
+import { patients } from '@dental-pms/db/schema';
+import type { ToolSpec } from '../../llm/base';
+import { runInClinic, getClinicIdFromContext } from '../../db/context';
 
 export const TOOL_NAME = 'lookup_patient';
 export const TOOL_DESCRIPTION = 'Lookup existing patient details by telephone number.';
@@ -40,8 +43,40 @@ export const TOOL_SPEC: ToolSpec = {
 };
 
 export async function execute(
-  _input: LookupPatientInput,
-  _context?: Record<string, unknown>
+  input: LookupPatientInput,
+  context?: Record<string, unknown>
 ): Promise<LookupPatientOutput> {
-  throw new NotImplementedError('Tool implementation arrives in Phase 5B.');
+  const clinicId = getClinicIdFromContext(context);
+
+  return await runInClinic(clinicId, async (tx) => {
+    const cleanPhone = input.phone.trim();
+    const [patient] = await tx
+      .select({
+        id: patients.id,
+        fullName: patients.fullName,
+        phone: patients.phone,
+        email: patients.email,
+        dob: patients.dob,
+        gender: patients.gender,
+      })
+      .from(patients)
+      .where(and(eq(patients.phone, cleanPhone), isNull(patients.deletedAt)))
+      .limit(1);
+
+    if (!patient) {
+      return { found: false, patient: null };
+    }
+
+    return {
+      found: true,
+      patient: {
+        id: patient.id,
+        full_name: patient.fullName,
+        phone: patient.phone,
+        email: patient.email,
+        dob: patient.dob,
+        gender: patient.gender,
+      },
+    };
+  });
 }
