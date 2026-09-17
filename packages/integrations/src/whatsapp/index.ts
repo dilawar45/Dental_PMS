@@ -1,5 +1,5 @@
 import type { WhatsAppProvider } from './interface';
-import type { Database } from '@dental-pms/db';
+import { getDefaultDb, type Database } from '@dental-pms/db';
 import { MockWhatsAppProvider } from './mock';
 import { RealWhatsAppProvider } from './real';
 
@@ -9,12 +9,13 @@ export type { WhatsAppProvider } from './interface';
  * Factory: returns the active WhatsApp provider based on WHATSAPP_PROVIDER env var.
  * Defaults to 'mock' if unset.
  */
-export function getWhatsAppProvider(db: Database): WhatsAppProvider {
+export function getWhatsAppProvider(db?: Database): WhatsAppProvider {
   const mode = process.env['WHATSAPP_PROVIDER'] ?? 'mock';
+  const activeDb = db ?? getDefaultDb();
 
   switch (mode) {
     case 'mock':
-      return new MockWhatsAppProvider(db);
+      return new MockWhatsAppProvider(activeDb);
     case 'real':
     case 'meta':
       return new RealWhatsAppProvider();

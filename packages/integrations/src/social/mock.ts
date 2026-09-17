@@ -28,6 +28,24 @@ export class MockSocialProvider implements SocialProvider {
     return { replyId };
   }
 
+  async sendMessage(
+    platform: SocialPlatform,
+    to: string,
+    body: string,
+  ): Promise<{ messageId: string }> {
+    const messageId = randomUUID();
+    await this.db.insert(devOutbox).values({
+      channel: platform,
+      from: 'system',
+      to,
+      body,
+      provider: 'mock',
+      direction: 'outbound',
+    });
+    console.log(`[MockSocial] sendMessage → ${platform}/${to}: ${body}`);
+    return { messageId };
+  }
+
   async fetchMentions(
     platform: SocialPlatform,
     _since: string,

@@ -6,6 +6,7 @@ import { devRoute } from './routes/dev';
 import { whatsappWebhook } from './routes/webhooks/whatsapp';
 import { voiceWebhook } from './routes/webhooks/voice';
 import { socialWebhook } from './routes/webhooks/social';
+import { googleWebhook } from './routes/webhooks/google';
 
 const app = new Hono();
 
@@ -15,10 +16,11 @@ app.route('/', healthRoute);
 // Developer testing endpoints
 app.route('/dev', devRoute);
 
-// Webhook endpoints (stubs returning 501 in Phase 5A)
+// Webhook endpoints
 app.route('/webhooks', whatsappWebhook);
 app.route('/webhooks', voiceWebhook);
 app.route('/webhooks', socialWebhook);
+app.route('/webhooks', googleWebhook);
 
 // Root greeting
 app.get('/', (c) => {

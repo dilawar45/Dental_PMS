@@ -13,6 +13,14 @@ export class RealSocialProvider implements SocialProvider {
     throw new Error('Social provider not configured. Set platform API credentials to enable.');
   }
 
+  async sendMessage(
+    _platform: SocialPlatform,
+    _to: string,
+    _body: string,
+  ): Promise<{ messageId: string }> {
+    throw new Error('Social provider not configured. Set platform API credentials to enable.');
+  }
+
   async fetchMentions(
     _platform: SocialPlatform,
     _since: string,
