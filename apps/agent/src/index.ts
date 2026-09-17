@@ -1,0 +1,41 @@
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { config } from './config';
+import { healthRoute } from './routes/health';
+import { devRoute } from './routes/dev';
+import { whatsappWebhook } from './routes/webhooks/whatsapp';
+import { voiceWebhook } from './routes/webhooks/voice';
+import { socialWebhook } from './routes/webhooks/social';
+
+const app = new Hono();
+
+// Global health and info
+app.route('/', healthRoute);
+
+// Developer testing endpoints
+app.route('/dev', devRoute);
+
+// Webhook endpoints (stubs returning 501 in Phase 5A)
+app.route('/webhooks', whatsappWebhook);
+app.route('/webhooks', voiceWebhook);
+app.route('/webhooks', socialWebhook);
+
+// Root greeting
+app.get('/', (c) => {
+  return c.json({
+    service: 'dental-agent',
+    status: 'ok',
+    version: '0.0.0',
+  });
+});
+
+const port = config.AGENT_PORT;
+
+if (process.env['NODE_ENV'] !== 'test') {
+  console.log(`🤖 Dental AI Agent listening on http://localhost:${port}`);
+  console.log(`   LLM Provider:  ${config.LLM_PROVIDER}`);
+  console.log(`   Session Store: ${config.SESSION_STORE}`);
+  serve({ fetch: app.fetch, port });
+}
+
+export default app;
