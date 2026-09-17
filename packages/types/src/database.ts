@@ -19,6 +19,7 @@ import type {
   broadcastRecipients,
   auditLog,
   devOutbox,
+  simulatorSessions,
 } from '@dental-pms/db/schema';
 
 // ─── Table Models (Select / Insert) ──────────────────────────────────────────
@@ -79,6 +80,9 @@ export type NewAuditLogEntry = InferInsertModel<typeof auditLog>;
 
 export type DevOutboxEntry = InferSelectModel<typeof devOutbox>;
 export type NewDevOutboxEntry = InferInsertModel<typeof devOutbox>;
+
+export type SimulatorSession = InferSelectModel<typeof simulatorSessions>;
+export type NewSimulatorSession = InferInsertModel<typeof simulatorSessions>;
 
 // ─── String-Union Enum Types (Derived from Schema Values) ───────────────────
 

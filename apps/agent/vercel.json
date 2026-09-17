@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "pnpm install && pnpm --filter @dental-pms/agent build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "dist"
+}

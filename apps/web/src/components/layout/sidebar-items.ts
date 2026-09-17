@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Building2,
   ScrollText,
+  PlayCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,6 +49,12 @@ export const NAV_ITEMS: NavItem[] = [
     title: 'Invoices',
     href: '/invoices',
     icon: Receipt,
+    roles: ['owner', 'receptionist'],
+  },
+  {
+    title: 'Simulator',
+    href: '/simulator',
+    icon: PlayCircle,
     roles: ['owner', 'receptionist'],
   },
 ];

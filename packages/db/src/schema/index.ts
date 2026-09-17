@@ -11,3 +11,4 @@ export * from './billing';
 export * from './broadcasts';
 export * from './audit';
 export * from './dev-outbox';
+export * from './simulator';

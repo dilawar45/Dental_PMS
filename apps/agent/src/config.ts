@@ -15,6 +15,7 @@ const configSchema = z.object({
   REDIS_URL: z.string().default('redis://localhost:6379'),
   DEFAULT_CLINIC_ID: z.string().default('b398700a-f746-4a45-afc0-b1020cda02a8'),
   DATABASE_URL: z.string().optional(),
+  SIMULATOR_SHARED_SECRET: z.string().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -27,4 +28,5 @@ export const config = configSchema.parse({
   REDIS_URL: process.env['REDIS_URL'],
   DEFAULT_CLINIC_ID: process.env['DEFAULT_CLINIC_ID'] || 'b398700a-f746-4a45-afc0-b1020cda02a8',
   DATABASE_URL: process.env['DATABASE_URL'],
+  SIMULATOR_SHARED_SECRET: process.env['SIMULATOR_SHARED_SECRET'],
 });

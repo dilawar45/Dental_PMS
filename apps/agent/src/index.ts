@@ -8,6 +8,8 @@ import { voiceWebhook } from './routes/webhooks/voice';
 import { socialWebhook } from './routes/webhooks/social';
 import { googleWebhook } from './routes/webhooks/google';
 
+import { simulateRoute } from './routes/simulate';
+
 const app = new Hono();
 
 // Global health and info
@@ -15,6 +17,9 @@ app.route('/', healthRoute);
 
 // Developer testing endpoints
 app.route('/dev', devRoute);
+
+// Simulator inbound endpoint (auth-gated in production)
+app.route('/', simulateRoute);
 
 // Webhook endpoints
 app.route('/webhooks', whatsappWebhook);
@@ -33,11 +38,14 @@ app.get('/', (c) => {
 
 const port = config.AGENT_PORT;
 
-if (process.env['NODE_ENV'] !== 'test') {
+// Only bind HTTP listener when not in test suite or Vercel serverless function
+if (process.env['NODE_ENV'] !== 'test' && !process.env['VERCEL']) {
   console.log(`🤖 Dental AI Agent listening on http://localhost:${port}`);
   console.log(`   LLM Provider:  ${config.LLM_PROVIDER}`);
   console.log(`   Session Store: ${config.SESSION_STORE}`);
   serve({ fetch: app.fetch, port });
 }
 
-export default app;
+export { app };
+export default Object.assign(app, { fetch: app.fetch.bind(app) });
+

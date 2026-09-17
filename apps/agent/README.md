@@ -34,4 +34,51 @@ pnpm --filter @dental-pms/agent dev
 
 # Typecheck
 pnpm --filter @dental-pms/agent typecheck
+
+# Build serverless output
+pnpm --filter @dental-pms/agent build
+
+# Test
+pnpm --filter @dental-pms/agent test
 ```
+
+## Deploy to Vercel
+
+The agent is deployed to Vercel as a **separate project** from the web app, pointing to the same GitHub repository.
+
+### Step-by-Step Deployment:
+1. `vercel link` or in the Vercel dashboard, click **Add New... -> Project** and select this GitHub repository.
+2. In Project Settings, set **Root Directory** to `apps/agent`.
+3. Set the build and output settings (automatically configured via `apps/agent/vercel.json`).
+4. Configure the following Environment Variables in the Vercel agent project:
+   - `DATABASE_URL` (Direct Supabase connection string)
+   - `LLM_PROVIDER=mock`
+   - `SESSION_STORE=memory` (upgrade to redis later)
+   - `DEFAULT_CLINIC_ID=<seed clinic id>`
+   - `WHATSAPP_PROVIDER=mock`
+   - `VOICE_PROVIDER=mock`
+   - `SOCIAL_PROVIDER=mock`
+   - `META_WHATSAPP_VERIFY_TOKEN=<value>`
+   - `META_APP_SECRET=<value>`
+   - `SIMULATOR_SHARED_SECRET=<shared-secret-matching-web-env>`
+5. Click **Deploy**.
+
+> **Note**: All credentials remain in mock mode. No real third-party API keys required.
+
+## Smoke Test Verification
+
+After deployment, verify the agent health endpoint:
+```bash
+curl https://<agent-url>.vercel.app/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "service": "dental-agent",
+  "llm_provider": "mock",
+  "session_store": "memory"
+}
+```
+
