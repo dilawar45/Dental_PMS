@@ -34,9 +34,18 @@ function LoginForm() {
       }
 
       if (data.user) {
-        // Refresh session and push to dashboard
+        // If user is platform super-admin and default destination was requested, redirect to /platform/dashboard
+        const isSuperAdmin =
+          data.user.user_metadata?.role === 'super_admin' ||
+          data.user.email === 'superadmin@dentalpms.platform';
+
+        const target =
+          redirectTo === '/dashboard' && isSuperAdmin
+            ? '/platform/dashboard'
+            : redirectTo;
+
         router.refresh();
-        router.push(redirectTo);
+        router.push(target);
       }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -44,9 +53,9 @@ function LoginForm() {
     }
   };
 
-  const quickFill = (userEmail: string) => {
+  const quickFill = (userEmail: string, pass = 'DevPassword123!') => {
     setEmail(userEmail);
-    setPassword('DevPassword123!');
+    setPassword(pass);
     setErrorMsg(null);
   };
 
@@ -134,11 +143,11 @@ function LoginForm() {
   );
 }
 
-function DevQuickLogin({ quickFill }: { quickFill: (email: string) => void }) {
+function DevQuickLogin({ quickFill }: { quickFill: (email: string, pass?: string) => void }) {
   return (
     <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
       <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2.5 text-center">
-        <span className="font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Dev Quick Login</span> · Password: <code className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">DevPassword123!</code>
+        <span className="font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Dev Quick Login</span> · Clinic Password: <code className="font-mono font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">DevPassword123!</code>
       </p>
       <div className="grid grid-cols-2 gap-2">
         <button
@@ -172,6 +181,30 @@ function DevQuickLogin({ quickFill }: { quickFill: (email: string) => void }) {
         >
           <span className="font-medium text-slate-900 dark:text-slate-200 block">Bilal Ahmed</span>
           <span className="text-slate-500 text-[10px]">Assistant</span>
+        </button>
+      </div>
+
+      {/* Super-Admin Direct Quick Access */}
+      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          type="button"
+          onClick={() => quickFill('superadmin@dentalpms.platform', 'SuperAdminDev123!')}
+          className="w-full text-xs p-2.5 rounded-xl border border-indigo-500/40 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-left transition flex items-center justify-between group cursor-pointer"
+        >
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">⚡</span>
+              <span className="font-bold text-indigo-950 dark:text-indigo-200">
+                Platform Super-Admin
+              </span>
+            </div>
+            <span className="text-slate-500 dark:text-slate-400 text-[10px] font-mono block mt-0.5">
+              superadmin@dentalpms.platform · SuperAdminDev123!
+            </span>
+          </div>
+          <span className="px-2 py-1 rounded text-[10px] font-bold bg-indigo-600 text-white uppercase tracking-wider group-hover:bg-indigo-500 transition">
+            Log In →
+          </span>
         </button>
       </div>
     </div>
