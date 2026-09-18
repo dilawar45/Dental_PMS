@@ -4,10 +4,21 @@ import { pgEnum } from 'drizzle-orm/pg-core';
  * Staff and clinic user roles.
  */
 export const userRoleEnum = pgEnum('user_role', [
+  'super_admin',
   'owner',
   'dentist',
   'receptionist',
   'assistant',
+]);
+
+/**
+ * Clinic lifecycle statuses.
+ */
+export const clinicStatusEnum = pgEnum('clinic_status', [
+  'pending',
+  'active',
+  'suspended',
+  'archived',
 ]);
 
 /**

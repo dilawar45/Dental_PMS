@@ -6,14 +6,14 @@ import { eq, and, desc, gte } from 'drizzle-orm';
 import { SimulatorChat } from './simulator-chat';
 
 export default async function SimulatorPage() {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { user, clinicId } = await requireRole(['owner', 'receptionist']);
 
   // Fetch clinic info and recent simulator sessions (last 24 hours)
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const { clinic, sessions } = await withClinic(
     db,
-    user.clinicId,
+    clinicId,
     async (tx: ClinicTransaction) => {
       const [c] = await tx
         .select({
@@ -22,7 +22,7 @@ export default async function SimulatorPage() {
           phone: clinics.phone,
         })
         .from(clinics)
-        .where(eq(clinics.id, user.clinicId));
+        .where(eq(clinics.id, clinicId));
 
       const sess = await tx
         .select({
@@ -36,7 +36,7 @@ export default async function SimulatorPage() {
         .from(simulatorSessions)
         .where(
           and(
-            eq(simulatorSessions.clinicId, user.clinicId),
+            eq(simulatorSessions.clinicId, clinicId),
             gte(simulatorSessions.createdAt, twentyFourHoursAgo)
           )
         )
@@ -46,7 +46,7 @@ export default async function SimulatorPage() {
     }
   );
 
-  const defaultClinicId = process.env['DEFAULT_CLINIC_ID'] || user.clinicId;
+  const defaultClinicId = process.env['DEFAULT_CLINIC_ID'] || clinicId;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] p-4 md:p-6 max-w-7xl mx-auto w-full gap-4">

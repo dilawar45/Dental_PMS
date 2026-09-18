@@ -12,3 +12,5 @@ export * from './broadcasts';
 export * from './audit';
 export * from './dev-outbox';
 export * from './simulator';
+export * from './platform';
+

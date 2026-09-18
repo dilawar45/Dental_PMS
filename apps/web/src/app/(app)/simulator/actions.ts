@@ -17,18 +17,32 @@ export type ActionResult<T> =
   | { success: false; error: string };
 
 const createSessionSchema = z.object({
-  channel: z.enum(['whatsapp', 'voice', 'instagram', 'facebook', 'google']).default('whatsapp'),
-  phone: z.string().min(5, 'Phone number required'),
-  label: z.string().optional(),
+  channel: z.enum(['whatsapp', 'voice', 'social', 'google']).default('whatsapp'),
+  phone: z
+    .string()
+    .trim()
+    .min(5, 'Phone number must be at least 5 digits')
+    .regex(/^[+0-9\s-]+$/, 'Invalid phone number format'),
+  label: z.string().trim().optional(),
 });
+
+export interface ToolInvocationRecord {
+  name: string;
+  arguments: Record<string, unknown>;
+  result: unknown;
+}
 
 export interface AgentInboundReply {
   reply: string;
-  tool_intent: string | null;
-  session_id: string;
+  conversation_id: string;
   channel: string;
-  logged: boolean;
-  tool_intents: string[];
+  status: string;
+  tool_invocations?: ToolInvocationRecord[];
+  tool_intents?: string[];
+  logged?: boolean;
+  confidence?: number;
+  routing?: string;
+  handoff_id?: string;
 }
 
 export interface SideEffectsData {
@@ -71,7 +85,7 @@ export async function createSimulatorSessionAction(rawInput: {
   label: string | null;
   createdAt: Date;
 }>> {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { user, clinicId } = await requireRole(['owner', 'receptionist']);
 
   const parsed = createSessionSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -82,11 +96,11 @@ export async function createSimulatorSessionAction(rawInput: {
   }
 
   try {
-    const session = await withClinic(db, user.clinicId, async (tx: ClinicTransaction) => {
+    const session = await withClinic(db, clinicId, async (tx: ClinicTransaction) => {
       const [inserted] = await tx
         .insert(simulatorSessions)
         .values({
-          clinicId: user.clinicId,
+          clinicId,
           startedBy: user.id,
           channel: parsed.data.channel,
           phone: parsed.data.phone,
@@ -126,7 +140,7 @@ export async function sendSimulatorMessageAction(input: {
   channel: string;
   phone: string;
 }): Promise<ActionResult<AgentInboundReply>> {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { clinicId } = await requireRole(['owner', 'receptionist']);
 
   if (!input.body || input.body.trim().length === 0) {
     return { success: false, error: 'Message cannot be empty' };
@@ -150,7 +164,7 @@ export async function sendSimulatorMessageAction(input: {
         channel: input.channel,
         from: input.phone,
         body: input.body,
-        clinic_id: user.clinicId,
+        clinic_id: clinicId,
       }),
     });
 
@@ -171,14 +185,14 @@ export async function sendSimulatorMessageAction(input: {
 
     // Touch the session record updated_at
     try {
-      await withClinic(db, user.clinicId, async (tx: ClinicTransaction) => {
+      await withClinic(db, clinicId, async (tx: ClinicTransaction) => {
         await tx
           .update(simulatorSessions)
           .set({ updatedAt: new Date() })
           .where(
             and(
               eq(simulatorSessions.id, input.sessionId),
-              eq(simulatorSessions.clinicId, user.clinicId)
+              eq(simulatorSessions.clinicId, clinicId)
             )
           );
       });
@@ -200,14 +214,14 @@ export async function sendSimulatorMessageAction(input: {
 export async function getSimulatorSideEffectsAction(
   sinceIso?: string
 ): Promise<ActionResult<SideEffectsData>> {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { clinicId } = await requireRole(['owner', 'receptionist']);
 
   const sinceDate = sinceIso
     ? new Date(sinceIso)
     : new Date(Date.now() - 15 * 1000); // 15 seconds window
 
   try {
-    const sideEffects = await withClinic(db, user.clinicId, async (tx: ClinicTransaction) => {
+    const sideEffects = await withClinic(db, clinicId, async (tx: ClinicTransaction) => {
       // 1. Audit logs
       const logs = await tx
         .select({
@@ -221,7 +235,7 @@ export async function getSimulatorSideEffectsAction(
         .from(auditLog)
         .where(
           and(
-            eq(auditLog.clinicId, user.clinicId),
+            eq(auditLog.clinicId, clinicId),
             gte(auditLog.createdAt, sinceDate)
           )
         )
@@ -242,7 +256,7 @@ export async function getSimulatorSideEffectsAction(
         .from(bookingRequests)
         .where(
           and(
-            eq(bookingRequests.clinicId, user.clinicId),
+            eq(bookingRequests.clinicId, clinicId),
             gte(bookingRequests.createdAt, sinceDate)
           )
         )
@@ -260,7 +274,7 @@ export async function getSimulatorSideEffectsAction(
         .from(handoffs)
         .where(
           and(
-            eq(handoffs.clinicId, user.clinicId),
+            eq(handoffs.clinicId, clinicId),
             gte(handoffs.createdAt, sinceDate)
           )
         )

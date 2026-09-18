@@ -12,7 +12,10 @@
     "generate": "drizzle-kit generate",
     "migrate": "tsx src/migrate.ts",
     "seed": "tsx src/seed.ts",
+    "seed:super-admin": "tsx src/seed-super-admin.ts",
     "test:rls": "tsx src/test-rls.ts",
+    "test:phase6-rls": "tsx src/test-phase6-rls.ts",
+    "test:support-token": "tsx src/test-support-token.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\""
   },

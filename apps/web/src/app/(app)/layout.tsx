@@ -1,10 +1,10 @@
-import { requireUser } from '@/lib/auth/current-user';
+import { requireUser, getClinicDbOptions } from '@/lib/auth/current-user';
 import { db } from '@/lib/db';
 import { withClinic } from '@dental-pms/db';
 import { clinics } from '@dental-pms/db/schema';
 import { eq } from 'drizzle-orm';
 import { AppShell } from '@/components/layout/app-shell';
-
+import { SupportModeBanner } from '@/components/layout/support-mode-banner';
 import { redirect } from 'next/navigation';
 
 export default async function AuthenticatedAppLayout({
@@ -12,21 +12,39 @@ export default async function AuthenticatedAppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, clinicId } = await requireUser();
+  const context = await requireUser();
+  const { user, clinicId, isSupportMode, realUser, supportSessionExpiresAt } = context;
 
-  // Query clinic with RLS enforced via withClinic
-  const clinic = await withClinic(db, clinicId, async (tx) => {
-    const [c] = await tx.select().from(clinics).where(eq(clinics.id, clinicId));
-    return c;
-  });
+  // Query clinic with RLS enforced via withClinic passing support mode session options
+  const clinic = await withClinic(
+    db,
+    clinicId,
+    async (tx) => {
+      const [c] = await tx.select().from(clinics).where(eq(clinics.id, clinicId));
+      return c;
+    },
+    getClinicDbOptions(context)
+  );
 
   if (!clinic) {
     redirect('/login');
   }
 
   return (
-    <AppShell user={user} clinic={clinic}>
-      {children}
-    </AppShell>
+    <div className="min-h-screen flex flex-col">
+      {isSupportMode && realUser && supportSessionExpiresAt && (
+        <SupportModeBanner
+          clinicName={clinic.name}
+          superAdminEmail={realUser.email}
+          impersonatedName={user.fullName || user.email}
+          expiresAt={supportSessionExpiresAt}
+        />
+      )}
+      <div className="flex-1 flex flex-col">
+        <AppShell user={user} clinic={clinic}>
+          {children}
+        </AppShell>
+      </div>
+    </div>
   );
 }

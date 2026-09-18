@@ -48,7 +48,8 @@ export async function updateSession(request: NextRequest) {
 
   const isLoginPage = request.nextUrl.pathname === '/login';
   const isAuthCallback = request.nextUrl.pathname.startsWith('/auth');
-  const isPublicRoute = isLoginPage || isAuthCallback;
+  const isInvitePage = request.nextUrl.pathname.startsWith('/invite');
+  const isPublicRoute = isLoginPage || isAuthCallback || isInvitePage;
 
   // Unauthenticated users trying to access protected routes -> redirect to /login
   if (!user && !isPublicRoute) {

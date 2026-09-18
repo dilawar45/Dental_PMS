@@ -20,6 +20,8 @@ import type {
   auditLog,
   devOutbox,
   simulatorSessions,
+  platformAuditLog,
+  clinicInvites,
 } from '@dental-pms/db/schema';
 
 // ─── Table Models (Select / Insert) ──────────────────────────────────────────
@@ -84,9 +86,22 @@ export type NewDevOutboxEntry = InferInsertModel<typeof devOutbox>;
 export type SimulatorSession = InferSelectModel<typeof simulatorSessions>;
 export type NewSimulatorSession = InferInsertModel<typeof simulatorSessions>;
 
+export type PlatformAuditLog = InferSelectModel<typeof platformAuditLog>;
+export type NewPlatformAuditLog = InferInsertModel<typeof platformAuditLog>;
+
+export type ClinicInvite = InferSelectModel<typeof clinicInvites>;
+export type NewClinicInvite = InferInsertModel<typeof clinicInvites>;
+
 // ─── String-Union Enum Types (Derived from Schema Values) ───────────────────
 
-export type UserRole = 'owner' | 'dentist' | 'receptionist' | 'assistant';
+export type UserRole =
+  | 'super_admin'
+  | 'owner'
+  | 'dentist'
+  | 'receptionist'
+  | 'assistant';
+
+export type ClinicStatus = 'pending' | 'active' | 'suspended' | 'archived';
 
 export type ConsentType = 'data_processing' | 'marketing' | 'reminders';
 
