@@ -15,3 +15,6 @@ export type { PdfProvider } from './pdf/interface';
 
 export { getAiProvider } from './ai';
 export type { AiProvider } from './ai/interface';
+
+export { getSmsProvider } from './sms';
+export type { SmsProvider } from './sms/interface';

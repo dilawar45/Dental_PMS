@@ -22,6 +22,8 @@ import type {
   simulatorSessions,
   platformAuditLog,
   clinicInvites,
+  patientOtps,
+  patientDevices,
 } from '@dental-pms/db/schema';
 
 // ─── Table Models (Select / Insert) ──────────────────────────────────────────
@@ -92,6 +94,12 @@ export type NewPlatformAuditLog = InferInsertModel<typeof platformAuditLog>;
 export type ClinicInvite = InferSelectModel<typeof clinicInvites>;
 export type NewClinicInvite = InferInsertModel<typeof clinicInvites>;
 
+export type PatientOtp = InferSelectModel<typeof patientOtps>;
+export type NewPatientOtp = InferInsertModel<typeof patientOtps>;
+
+export type PatientDevice = InferSelectModel<typeof patientDevices>;
+export type NewPatientDevice = InferInsertModel<typeof patientDevices>;
+
 // ─── String-Union Enum Types (Derived from Schema Values) ───────────────────
 
 export type UserRole =
@@ -121,7 +129,8 @@ export type BookingRequestChannel =
   | 'instagram'
   | 'facebook'
   | 'google'
-  | 'staff';
+  | 'staff'
+  | 'patient_app';
 
 export type ToothSurface =
   | 'mesial'
@@ -148,7 +157,8 @@ export type ConversationChannel =
   | 'voice'
   | 'instagram'
   | 'facebook'
-  | 'google';
+  | 'google'
+  | 'patient_app';
 
 export type ConversationStatus = 'open' | 'pending_handoff' | 'closed';
 

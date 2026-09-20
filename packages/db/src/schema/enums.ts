@@ -61,6 +61,7 @@ export const bookingRequestChannelEnum = pgEnum('booking_request_channel', [
   'facebook',
   'google',
   'staff',
+  'patient_app',
 ]);
 
 /**
@@ -108,6 +109,7 @@ export const conversationChannelEnum = pgEnum('conversation_channel', [
   'instagram',
   'facebook',
   'google',
+  'patient_app',
 ]);
 
 /**

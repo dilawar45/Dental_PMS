@@ -13,4 +13,4 @@ export * from './audit';
 export * from './dev-outbox';
 export * from './simulator';
 export * from './platform';
-
+export * from './patient-auth';

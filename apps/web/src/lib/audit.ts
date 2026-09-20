@@ -13,6 +13,7 @@ export type AuditAction =
   | 'appointment.create'
   | 'appointment.update'
   | 'appointment.status_change'
+  | 'booking_request.create'
   | 'booking_request.approve'
   | 'booking_request.reject'
   | 'booking_request.link_patient'

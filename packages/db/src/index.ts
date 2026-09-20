@@ -20,6 +20,7 @@ export function createDb(url: string) {
 /** Re-export the full schema for consumer convenience. */
 export { schema };
 export * from './support-mode';
+export * from './slots';
 
 /** DB client type for use in function signatures. */
 export type Database = ReturnType<typeof createDb>;
