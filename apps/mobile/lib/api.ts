@@ -101,7 +101,7 @@ export const api = {
 };
 
 // =========================================================
-// Patient Specific API Endpoints
+// Patient Specific Types & Endpoints
 // =========================================================
 
 export interface SendOtpResponse {
@@ -119,18 +119,55 @@ export interface VerifyOtpResponse {
 export interface Doctor {
   id: string;
   name: string;
+  full_name?: string;
+  role: 'owner' | 'dentist' | string;
+  fee: number;
+  fee_currency: string;
+  weekly_schedule: string;
   specialty?: string | null;
   experience_years?: number | null;
   bio?: string | null;
-  working_hours?: Record<string, unknown> | null;
+}
+
+export interface Slot {
+  start: string;
+  end: string;
+  start_at: string;
+  end_at: string;
+  dentist_id: string;
+  dentist_name: string;
+}
+
+export interface AvailabilityResponse {
+  date: string;
+  available_slots: Slot[];
+}
+
+export interface CreateBookingInput {
+  slot_start: string;
+  slot_end: string;
+  dentist_id?: string;
+  reason: string;
+  notes?: string;
+}
+
+export interface CreateBookingResponse {
+  booking_request_id: string;
+  status: string;
+  message: string;
 }
 
 export interface Appointment {
   id: string;
+  start_at?: string;
+  end_at?: string;
   start_time: string;
   end_time: string;
   status: string;
+  reason?: string | null;
   notes?: string | null;
+  dentist_id?: string | null;
+  dentist_name?: string | null;
   doctor_name?: string;
   operatory_name?: string;
 }
@@ -155,11 +192,49 @@ export const patientApi = {
       { skipAuth: true }
     ),
 
-  getDoctors: () => api.get<Doctor[]>('/api/patient/doctors'),
+  getDoctors: async (): Promise<Doctor[]> => {
+    const res = await api.get<{ doctors?: Doctor[] } | Doctor[]>('/api/patient/doctors');
+    const rawList = Array.isArray(res) ? res : res.doctors || [];
+    return rawList.map((doc) => ({
+      ...doc,
+      name: doc.name || doc.full_name || 'Dr. Dental Specialist',
+      fee: doc.fee ?? 2000,
+      fee_currency: doc.fee_currency || 'PKR',
+      weekly_schedule: doc.weekly_schedule || 'Mon–Sat 09:00–19:00',
+    }));
+  },
 
-  getAppointments: (status?: string) => {
+  getDoctorById: async (id: string): Promise<Doctor> => {
+    const list = await patientApi.getDoctors();
+    const found = list.find((d) => d.id === id);
+    if (!found) {
+      throw new Error(`Doctor with ID ${id} not found.`);
+    }
+    return found;
+  },
+
+  getAvailability: (date: string, dentistId?: string): Promise<AvailabilityResponse> => {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (dentistId) params.append('dentist_id', dentistId);
+    return api.get<AvailabilityResponse>(`/api/patient/availability?${params.toString()}`);
+  },
+
+  createBooking: (input: CreateBookingInput): Promise<CreateBookingResponse> =>
+    api.post<CreateBookingResponse>('/api/patient/bookings', input),
+
+  getAppointments: async (status?: string): Promise<Appointment[]> => {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    return api.get<Appointment[]>(`/api/patient/appointments${query}`);
+    const res = await api.get<{ appointments?: Appointment[] } | Appointment[]>(
+      `/api/patient/appointments${query}`
+    );
+    const rawList = Array.isArray(res) ? res : res.appointments || [];
+    return rawList.map((apt) => ({
+      ...apt,
+      doctor_name: apt.dentist_name || apt.doctor_name || 'Dr. Specialist',
+      start_time: apt.start_at || apt.start_time,
+      end_time: apt.end_at || apt.end_time,
+    }));
   },
 
   getProfile: () => api.get<PatientProfile>('/api/patient/me'),

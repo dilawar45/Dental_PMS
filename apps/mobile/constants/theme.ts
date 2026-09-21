@@ -43,3 +43,46 @@ export const spacing = {
   xl: 32,
   xxl: 48,
 } as const;
+
+export const statusColors: Record<
+  string,
+  { bg: string; text: string; border: string; label: string }
+> = {
+  scheduled: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    label: 'Scheduled',
+  },
+  confirmed: {
+    bg: 'bg-indigo-50',
+    text: 'text-indigo-700',
+    border: 'border-indigo-200',
+    label: 'Confirmed',
+  },
+  arrived: {
+    bg: 'bg-amber-50',
+    text: 'text-amber-700',
+    border: 'border-amber-200',
+    label: 'Arrived',
+  },
+  completed: {
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    label: 'Completed',
+  },
+  no_show: {
+    bg: 'bg-rose-50',
+    text: 'text-rose-700',
+    border: 'border-rose-200',
+    label: 'No Show',
+  },
+  cancelled: {
+    bg: 'bg-slate-100',
+    text: 'text-slate-500 line-through',
+    border: 'border-slate-200',
+    label: 'Cancelled',
+  },
+};
+

@@ -28,6 +28,10 @@ export default function RootLayout() {
           <Stack.Screen name="clinic-picker" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="book-appointment"
+            options={{ animation: 'slide_from_right' }}
+          />
         </Stack>
       </QueryClientProvider>
     </SafeAreaProvider>
