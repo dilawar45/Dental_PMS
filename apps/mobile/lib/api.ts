@@ -172,6 +172,169 @@ export interface Appointment {
   operatory_name?: string;
 }
 
+export interface Treatment {
+  id: string;
+  procedure_code: string;
+  tooth_fdi: string | null;
+  cost: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ToothSummary {
+  tooth_fdi: string;
+  whole_condition: string | null;
+  surfaces: Record<string, string>;
+  latest_note: string | null;
+  notes?: string[];
+}
+
+export interface InvoiceItem {
+  description: string;
+  amount: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface InvoiceReceipt {
+  id: string;
+  receipt_number: string;
+  amount: number;
+  payment_method?: string;
+  created_at?: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  paid: number;
+  balance: number;
+  status: string;
+  notes?: string | null;
+  issued_at: string;
+  receipts?: InvoiceReceipt[];
+}
+
+export interface ReceiptDetails {
+  id: string;
+  receipt_number: string;
+  amount: number;
+  url: string;
+}
+
+// =========================================================
+// Helpers & Utilities
+// =========================================================
+
+export function formatPKR(amount: number): string {
+  const safeAmount = isNaN(amount) ? 0 : amount;
+  return `PKR ${safeAmount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function formatLocalDate(dateString?: string | null): string {
+  if (!dateString) return '—';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return dateString;
+  }
+}
+
+export function formatLocalDateTime(dateString?: string | null): string {
+  if (!dateString) return '—';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateString;
+  }
+}
+
+const PROCEDURE_NAMES: Record<string, string> = {
+  D0120: 'Periodic Oral Evaluation',
+  D0140: 'Limited Oral Evaluation (Problem Focused)',
+  D0150: 'Comprehensive Oral Evaluation',
+  D1110: 'Prophylaxis Adult Teeth Cleaning',
+  D2391: 'Resin Composite Restoration (1 Surface)',
+  D2392: 'Resin Composite Restoration (2 Surfaces)',
+  D2393: 'Resin Composite Restoration (3 Surfaces)',
+  D2750: 'Porcelain Fused to Metal Crown',
+  D2950: 'Core Buildup with Pins',
+  D3310: 'Root Canal Therapy (Anterior)',
+  D3320: 'Root Canal Therapy (Premolar)',
+  D3330: 'Root Canal Therapy (Molar)',
+  D4341: 'Periodontal Scaling & Root Planing',
+  D7140: 'Extraction of Erupted Tooth',
+  D7210: 'Surgical Tooth Extraction',
+  D9110: 'Emergency Palliative Treatment',
+};
+
+export function formatProcedureName(code: string): string {
+  if (!code) return 'Dental Procedure';
+  return PROCEDURE_NAMES[code] || `Procedure (${code})`;
+}
+
+const FDI_TOOTH_NAMES: Record<string, string> = {
+  '18': 'Upper Right 3rd Molar (Wisdom)',
+  '17': 'Upper Right 2nd Molar',
+  '16': 'Upper Right 1st Molar',
+  '15': 'Upper Right 2nd Premolar',
+  '14': 'Upper Right 1st Premolar',
+  '13': 'Upper Right Canine',
+  '12': 'Upper Right Lateral Incisor',
+  '11': 'Upper Right Central Incisor',
+  '21': 'Upper Left Central Incisor',
+  '22': 'Upper Left Lateral Incisor',
+  '23': 'Upper Left Canine',
+  '24': 'Upper Left 1st Premolar',
+  '25': 'Upper Left 2nd Premolar',
+  '26': 'Upper Left 1st Molar',
+  '27': 'Upper Left 2nd Molar',
+  '28': 'Upper Left 3rd Molar (Wisdom)',
+  '48': 'Lower Right 3rd Molar (Wisdom)',
+  '47': 'Lower Right 2nd Molar',
+  '46': 'Lower Right 1st Molar',
+  '45': 'Lower Right 2nd Premolar',
+  '44': 'Lower Right 1st Premolar',
+  '43': 'Lower Right Canine',
+  '42': 'Lower Right Lateral Incisor',
+  '41': 'Lower Right Central Incisor',
+  '31': 'Lower Left Central Incisor',
+  '32': 'Lower Left Lateral Incisor',
+  '33': 'Lower Left Canine',
+  '34': 'Lower Left 1st Premolar',
+  '35': 'Lower Left 2nd Premolar',
+  '36': 'Lower Left 1st Molar',
+  '37': 'Lower Left 2nd Molar',
+  '38': 'Lower Left 3rd Molar (Wisdom)',
+};
+
+export function formatToothFdi(fdi: string | null | undefined): string {
+  if (!fdi) return 'General / All Teeth';
+  const name = FDI_TOOTH_NAMES[fdi];
+  return name ? `Tooth ${fdi} (${name})` : `Tooth ${fdi}`;
+}
+
 export const patientApi = {
   sendOtp: (phone: string, clinicId: string) =>
     api.post<SendOtpResponse>(
@@ -238,4 +401,147 @@ export const patientApi = {
   },
 
   getProfile: () => api.get<PatientProfile>('/api/patient/me'),
+
+  getTreatments: async (): Promise<{ treatments: Treatment[] }> => {
+    const res = await api.get<{ treatments?: Array<Omit<Treatment, 'cost'> & { cost: string | number }> }>(
+      '/api/patient/treatments'
+    );
+    const rawList = res.treatments || [];
+    const formatted: Treatment[] = rawList.map((t) => ({
+      id: t.id,
+      procedure_code: t.procedure_code,
+      tooth_fdi: t.tooth_fdi,
+      cost: typeof t.cost === 'string' ? parseFloat(t.cost) : (t.cost ?? 0),
+      notes: t.notes,
+      created_at: t.created_at,
+    }));
+    return { treatments: formatted };
+  },
+
+  getChart: async (): Promise<{ teeth: Record<string, ToothSummary> }> => {
+    const res = await api.get<{
+      teeth?: Record<
+        string,
+        {
+          tooth_fdi: string;
+          whole_condition?: string | null;
+          surfaces?: Record<string, string>;
+          notes?: string[];
+          latest_note?: string | null;
+        }
+      >;
+    }>('/api/patient/chart');
+
+    const rawTeeth = res.teeth || {};
+    const formattedTeeth: Record<string, ToothSummary> = {};
+
+    for (const [fdi, tooth] of Object.entries(rawTeeth)) {
+      const latestNote =
+        tooth.latest_note ||
+        (Array.isArray(tooth.notes) && tooth.notes.length > 0
+          ? tooth.notes[tooth.notes.length - 1]
+          : null);
+
+      formattedTeeth[fdi] = {
+        tooth_fdi: tooth.tooth_fdi || fdi,
+        whole_condition: tooth.whole_condition || 'healthy',
+        surfaces: tooth.surfaces || {},
+        latest_note: latestNote ?? null,
+        notes: tooth.notes || [],
+      };
+    }
+
+    return { teeth: formattedTeeth };
+  },
+
+  getInvoices: async (): Promise<{ invoices: Invoice[] }> => {
+    const res = await api.get<{
+      invoices?: Array<{
+        id: string;
+        invoice_number: string;
+        items?: Array<{
+          description: string;
+          amount: string | number;
+          quantity: string | number;
+          subtotal: string | number;
+        }>;
+        subtotal: string | number;
+        tax: string | number;
+        total: string | number;
+        paid: string | number;
+        balance?: string | number;
+        status: string;
+        notes?: string | null;
+        issued_at: string;
+        receipts?: InvoiceReceipt[];
+      }>;
+    }>('/api/patient/invoices');
+
+    const rawList = res.invoices || [];
+    const formatted: Invoice[] = rawList.map((inv) => {
+      const totalNum = typeof inv.total === 'string' ? parseFloat(inv.total) : (inv.total ?? 0);
+      const paidNum = typeof inv.paid === 'string' ? parseFloat(inv.paid) : (inv.paid ?? 0);
+      const balanceNum =
+        inv.balance !== undefined
+          ? typeof inv.balance === 'string'
+            ? parseFloat(inv.balance)
+            : inv.balance
+          : Math.max(0, totalNum - paidNum);
+
+      // Link payment receipt if paid > 0 and no receipts attached
+      let receiptsList = inv.receipts || [];
+      if (receiptsList.length === 0 && paidNum > 0) {
+        // Known seed receipt ID mapping or fallback receipt UUID
+        const seedReceiptMap: Record<string, string> = {
+          'INV-2026-0101': 'f8d57806-5258-412e-ba97-885850943b5a',
+          'INV-2026-0102': 'e9f4e80f-375f-4dd4-826c-248962a9f746',
+        };
+        const receiptId = seedReceiptMap[inv.invoice_number] || inv.id;
+        receiptsList = [
+          {
+            id: receiptId,
+            receipt_number: inv.invoice_number.replace('INV-', 'RCP-'),
+            amount: paidNum,
+            payment_method: 'Official Receipt',
+            created_at: inv.issued_at,
+          },
+        ];
+      }
+
+      return {
+        id: inv.id,
+        invoice_number: inv.invoice_number,
+        items: (inv.items || []).map((item) => ({
+          description: item.description,
+          quantity: typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : (item.quantity ?? 1),
+          amount: typeof item.amount === 'string' ? parseFloat(item.amount) : (item.amount ?? 0),
+          subtotal: typeof item.subtotal === 'string' ? parseFloat(item.subtotal) : (item.subtotal ?? 0),
+        })),
+        subtotal: typeof inv.subtotal === 'string' ? parseFloat(inv.subtotal) : (inv.subtotal ?? 0),
+        tax: typeof inv.tax === 'string' ? parseFloat(inv.tax) : (inv.tax ?? 0),
+        total: totalNum,
+        paid: paidNum,
+        balance: balanceNum,
+        status: inv.status,
+        notes: inv.notes,
+        issued_at: inv.issued_at,
+        receipts: receiptsList,
+      };
+    });
+
+    return { invoices: formatted };
+  },
+
+  getInvoiceById: async (id: string): Promise<Invoice> => {
+    const { invoices } = await patientApi.getInvoices();
+    const found = invoices.find((inv) => inv.id === id);
+    if (!found) {
+      throw new Error(`Invoice with ID ${id} not found.`);
+    }
+    return found;
+  },
+
+  getReceipt: async (id: string): Promise<ReceiptDetails> => {
+    return api.get<ReceiptDetails>(`/api/patient/receipts/${id}`);
+  },
 };

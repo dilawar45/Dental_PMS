@@ -1,7 +1,18 @@
 import React from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text, Alert, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { LogOut, ShieldCheck, HeartPulse, Building2, User } from 'lucide-react-native';
+import {
+  LogOut,
+  ShieldCheck,
+  HeartPulse,
+  Building2,
+  User,
+  Stethoscope,
+  Grid3X3,
+  Receipt,
+  ChevronRight,
+  FolderOpen,
+} from 'lucide-react-native';
 import { Screen } from '../../components/ui/screen';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -53,6 +64,87 @@ export default function ProfileScreen() {
         {patient?.email ? (
           <Text className="text-xs text-slate-400 mt-0.5">{patient.email}</Text>
         ) : null}
+      </Card>
+
+      {/* My Records Quick Links */}
+      <Card className="p-5 mb-5">
+        <View className="flex-row items-center mb-3">
+          <FolderOpen color="#059669" size={18} />
+          <Text className="text-base font-bold text-slate-900 ml-2">
+            My Records
+          </Text>
+        </View>
+        <Text className="text-xs text-slate-500 mb-3">
+          Quickly access your treatment records, odontogram, and billing statements.
+        </Text>
+
+        <View className="divide-y divide-slate-100">
+          {/* Link 1: Treatments */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/records?tab=treatments')}
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between py-3"
+          >
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-9 h-9 rounded-xl bg-emerald-50 items-center justify-center mr-3 border border-emerald-100">
+                <Stethoscope size={18} color="#059669" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-slate-900">
+                  Treatments
+                </Text>
+                <Text className="text-xs text-slate-500">
+                  Procedures and restorative dental history
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#94a3b8" />
+          </TouchableOpacity>
+
+          {/* Link 2: Dental Chart */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/records?tab=chart')}
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between py-3"
+          >
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-9 h-9 rounded-xl bg-blue-50 items-center justify-center mr-3 border border-blue-100">
+                <Grid3X3 size={18} color="#2563eb" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-slate-900">
+                  Dental Chart
+                </Text>
+                <Text className="text-xs text-slate-500">
+                  Interactive odontogram and surface conditions
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#94a3b8" />
+          </TouchableOpacity>
+
+          {/* Link 3: Invoices */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/records?tab=invoices')}
+            activeOpacity={0.7}
+            className="flex-row items-center justify-between py-3"
+          >
+            <View className="flex-row items-center flex-1 mr-3">
+              <View className="w-9 h-9 rounded-xl bg-amber-50 items-center justify-center mr-3 border border-amber-100">
+                <Receipt size={18} color="#d97706" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-bold text-slate-900">
+                  Invoices & Receipts
+                </Text>
+                <Text className="text-xs text-slate-500">
+                  Billing history, balances, and payment receipts
+                </Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#94a3b8" />
+          </TouchableOpacity>
+        </View>
       </Card>
 
       {/* Clinical & Health Details */}

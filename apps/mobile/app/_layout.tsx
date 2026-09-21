@@ -32,6 +32,10 @@ export default function RootLayout() {
             name="book-appointment"
             options={{ animation: 'slide_from_right' }}
           />
+          <Stack.Screen
+            name="invoice/[id]"
+            options={{ animation: 'slide_from_right' }}
+          />
         </Stack>
       </QueryClientProvider>
     </SafeAreaProvider>

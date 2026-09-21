@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ViewProps } from 'react-native';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { statusColors } from '../../constants/theme';
+import { statusColors, invoiceStatusColors } from '../../constants/theme';
 
 interface BadgeProps extends ViewProps {
   status?: string;
@@ -19,25 +19,28 @@ export function Badge({
   className,
   ...props
 }: BadgeProps) {
-  if (status && statusColors[status.toLowerCase()]) {
-    const config = statusColors[status.toLowerCase()]!;
-    return (
-      <View
-        className={twMerge(
-          clsx(
-            'flex-row items-center px-2.5 py-0.5 rounded-full border',
-            config.bg,
-            config.border,
-            className
-          )
-        )}
-        {...props}
-      >
-        <Text className={clsx('text-xs font-semibold capitalize', config.text)}>
-          {label || config.label || status}
-        </Text>
-      </View>
-    );
+  if (status) {
+    const key = status.toLowerCase();
+    const config = statusColors[key] || invoiceStatusColors[key];
+    if (config) {
+      return (
+        <View
+          className={twMerge(
+            clsx(
+              'flex-row items-center px-2.5 py-0.5 rounded-full border',
+              config.bg,
+              config.border,
+              className
+            )
+          )}
+          {...props}
+        >
+          <Text className={clsx('text-xs font-semibold capitalize', config.text)}>
+            {label || config.label || status}
+          </Text>
+        </View>
+      );
+    }
   }
 
   const variantStyles = {

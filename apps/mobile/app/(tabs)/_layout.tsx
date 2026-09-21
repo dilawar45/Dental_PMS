@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Home, Stethoscope, Calendar, User } from 'lucide-react-native';
+import { Home, Stethoscope, Calendar, FileText, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
   return (
@@ -45,6 +45,15 @@ export default function TabsLayout() {
           title: 'Appointments',
           tabBarIcon: ({ color, size }) => (
             <Calendar color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="records"
+        options={{
+          title: 'Records',
+          tabBarIcon: ({ color, size }) => (
+            <FileText color={color} size={size} />
           ),
         }}
       />

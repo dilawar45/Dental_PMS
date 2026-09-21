@@ -9,7 +9,8 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 interface ButtonProps extends TouchableOpacityProps {
-  title: string;
+  title?: string;
+  children?: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
@@ -18,6 +19,7 @@ interface ButtonProps extends TouchableOpacityProps {
 
 export function Button({
   title,
+  children,
   variant = 'primary',
   size = 'md',
   loading = false,
@@ -82,13 +84,25 @@ export function Button({
       ) : (
         <>
           {icon ? <Text className="mr-2">{icon}</Text> : null}
-          <Text
-            className={twMerge(
-              clsx(textVariantStyles, textSizeStyles, 'text-center')
-            )}
-          >
-            {title}
-          </Text>
+          {title ? (
+            <Text
+              className={twMerge(
+                clsx(textVariantStyles, textSizeStyles, 'text-center')
+              )}
+            >
+              {title}
+            </Text>
+          ) : typeof children === 'string' ? (
+            <Text
+              className={twMerge(
+                clsx(textVariantStyles, textSizeStyles, 'text-center')
+              )}
+            >
+              {children}
+            </Text>
+          ) : (
+            children
+          )}
         </>
       )}
     </TouchableOpacity>

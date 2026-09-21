@@ -378,7 +378,8 @@ async function main() {
     let status: typeof appointments.$inferInsert.status;
     if (dayOffset < -1) {
       // Past appointments: 25 completed, 5 cancelled/no_show
-      if (i % 6 === 0) status = 'no_show';
+      if (i === 0) status = 'completed';
+      else if (i % 6 === 0) status = 'no_show';
       else if (i % 8 === 0) status = 'cancelled';
       else status = 'completed';
     } else if (dayOffset <= 1) {
