@@ -16,6 +16,21 @@ export function Card({ children, className, ...props }: CardProps) {
           className
         )
       )}
+      style={[
+        {
+          backgroundColor: '#ffffff',
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: '#e2e8f0',
+          padding: 16,
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.05,
+          shadowRadius: 3,
+          elevation: 2,
+        },
+        props.style,
+      ]}
       {...props}
     >
       {children}

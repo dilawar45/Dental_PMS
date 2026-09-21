@@ -61,6 +61,34 @@ export function Button({
 
   const isDisabled = disabled || loading;
 
+  const buttonStyleFallbacks = {
+    primary: { backgroundColor: '#059669', borderColor: '#047857', borderWidth: 1 },
+    secondary: { backgroundColor: '#f1f5f9', borderColor: '#e2e8f0', borderWidth: 1 },
+    outline: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1.5 },
+    ghost: { backgroundColor: 'transparent', borderWidth: 0 },
+    danger: { backgroundColor: '#dc2626', borderColor: '#b91c1c', borderWidth: 1 },
+  }[variant];
+
+  const buttonSizeFallbacks = {
+    sm: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
+    md: { paddingVertical: 14, paddingHorizontal: 20, borderRadius: 14 },
+    lg: { paddingVertical: 16, paddingHorizontal: 24, borderRadius: 16 },
+  }[size];
+
+  const textStyleFallbacks = {
+    primary: { color: '#ffffff', fontWeight: '700' as const },
+    secondary: { color: '#1e293b', fontWeight: '600' as const },
+    outline: { color: '#334155', fontWeight: '600' as const },
+    ghost: { color: '#334155', fontWeight: '600' as const },
+    danger: { color: '#ffffff', fontWeight: '700' as const },
+  }[variant];
+
+  const textSizeFallbacks = {
+    sm: { fontSize: 13 },
+    md: { fontSize: 15 },
+    lg: { fontSize: 16 },
+  }[size];
+
   return (
     <TouchableOpacity
       className={twMerge(
@@ -72,6 +100,22 @@ export function Button({
           className
         )
       )}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: isDisabled ? 0.6 : 1,
+          shadowColor: variant === 'primary' ? '#059669' : '#000000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: variant === 'primary' ? 0.2 : 0.05,
+          shadowRadius: 4,
+          elevation: variant === 'primary' ? 2 : 1,
+        },
+        buttonStyleFallbacks,
+        buttonSizeFallbacks,
+        props.style,
+      ]}
       disabled={isDisabled}
       activeOpacity={0.8}
       {...props}
@@ -83,12 +127,17 @@ export function Button({
         />
       ) : (
         <>
-          {icon ? <Text className="mr-2">{icon}</Text> : null}
+          {icon ? <Text style={{ marginRight: 8 }}>{icon}</Text> : null}
           {title ? (
             <Text
               className={twMerge(
                 clsx(textVariantStyles, textSizeStyles, 'text-center')
               )}
+              style={[
+                { textAlign: 'center' },
+                textStyleFallbacks,
+                textSizeFallbacks,
+              ]}
             >
               {title}
             </Text>
@@ -97,6 +146,11 @@ export function Button({
               className={twMerge(
                 clsx(textVariantStyles, textSizeStyles, 'text-center')
               )}
+              style={[
+                { textAlign: 'center' },
+                textStyleFallbacks,
+                textSizeFallbacks,
+              ]}
             >
               {children}
             </Text>

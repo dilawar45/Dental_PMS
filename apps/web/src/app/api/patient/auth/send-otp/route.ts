@@ -68,17 +68,6 @@ export async function POST(req: Request) {
       process.env['OTP_PROVIDER'] === 'mock' ||
       process.env.NODE_ENV !== 'production';
 
-    // If patient does not exist, return generic success without revealing existence
-    if (!existingPatient) {
-      return withCors(
-        NextResponse.json({
-          success: true,
-          ...(isDev ? { dev_code: '123456' } : {}),
-        }),
-        req
-      );
-    }
-
     // Generate 6-digit code and SHA-256 hash
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = crypto.createHash('sha256').update(code).digest('hex');
@@ -108,6 +97,7 @@ export async function POST(req: Request) {
     return withCors(
       NextResponse.json({
         success: true,
+        is_new_patient: !existingPatient,
         ...(isDev ? { dev_code: code } : {}),
       }),
       req

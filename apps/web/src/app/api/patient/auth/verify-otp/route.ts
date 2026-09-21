@@ -122,26 +122,46 @@ export async function POST(req: Request) {
       return p;
     });
 
-    if (!patient) {
-      return withCors(
-        NextResponse.json(
-          { error: 'Patient account not registered in this clinic' },
-          { status: 401 }
-        ),
-        req
-      );
+    let resolvedPatient = patient;
+    let isNew = false;
+
+    if (!resolvedPatient) {
+      const newName =
+        body.profile?.first_name || body.full_name || body.name
+          ? `${body.profile?.first_name || body.full_name || body.name} ${body.profile?.last_name || ''}`.trim()
+          : 'New Patient';
+
+      resolvedPatient = await withClinic(clinic_id, async (tx) => {
+        const [inserted] = await tx
+          .insert(patients)
+          .values({
+            clinicId: clinic_id,
+            fullName: newName,
+            phone,
+            lastLoginAt: new Date(),
+          })
+          .returning({
+            id: patients.id,
+            fullName: patients.fullName,
+            phone: patients.phone,
+          });
+
+        return inserted;
+      });
+      isNew = true;
     }
 
     // Sign 30-day JWT
-    const token = signPatientToken(patient.id, clinic_id);
+    const token = signPatientToken(resolvedPatient.id, clinic_id);
 
     return withCors(
       NextResponse.json({
         token,
+        is_new: isNew,
         patient: {
-          id: patient.id,
-          full_name: patient.fullName,
-          phone: patient.phone,
+          id: resolvedPatient.id,
+          full_name: resolvedPatient.fullName,
+          phone: resolvedPatient.phone,
         },
       }),
       req

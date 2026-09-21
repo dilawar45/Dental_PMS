@@ -23,6 +23,16 @@ export function Badge({
     const key = status.toLowerCase();
     const config = statusColors[key] || invoiceStatusColors[key];
     if (config) {
+      const fallbackColorMap: Record<string, { bg: string; border: string; text: string }> = {
+        confirmed: { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46' },
+        pending: { bg: '#fffbeb', border: '#fde68a', text: '#92400e' },
+        cancelled: { bg: '#fef2f2', border: '#fecaca', text: '#991b1b' },
+        completed: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534' },
+        paid: { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46' },
+        draft: { bg: '#f8fafc', border: '#e2e8f0', text: '#475569' },
+      };
+      const fb = fallbackColorMap[key] || { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46' };
+
       return (
         <View
           className={twMerge(
@@ -33,9 +43,25 @@ export function Badge({
               className
             )
           )}
+          style={[
+            {
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              borderRadius: 999,
+              borderWidth: 1,
+              backgroundColor: fb.bg,
+              borderColor: fb.border,
+            },
+            props.style,
+          ]}
           {...props}
         >
-          <Text className={clsx('text-xs font-semibold capitalize', config.text)}>
+          <Text
+            className={clsx('text-xs font-semibold capitalize', config.text)}
+            style={{ fontSize: 11, fontWeight: '700', color: fb.text, textTransform: 'capitalize' }}
+          >
             {label || config.label || status}
           </Text>
         </View>

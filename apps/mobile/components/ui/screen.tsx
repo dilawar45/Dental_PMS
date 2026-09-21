@@ -39,6 +39,7 @@ export function Screen({
   const inner = (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, backgroundColor: '#f8fafc' }}
       className={twMerge(clsx('flex-1 bg-slate-50', className))}
       {...props}
     >
@@ -46,9 +47,34 @@ export function Screen({
     </KeyboardAvoidingView>
   );
 
-  if (safeArea) {
-    return <SafeAreaView className="flex-1 bg-slate-50">{inner}</SafeAreaView>;
+  const container = safeArea ? (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} className="flex-1 bg-slate-50">
+      {inner}
+    </SafeAreaView>
+  ) : (
+    inner
+  );
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ flex: 1, width: '100%', backgroundColor: '#f1f5f9', alignItems: 'center' }}>
+        <View
+          style={
+            {
+              width: '100%',
+              maxWidth: 480,
+              flex: 1,
+              backgroundColor: '#f8fafc',
+              minHeight: '100vh',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)',
+            } as unknown as object
+          }
+        >
+          {container}
+        </View>
+      </View>
+    );
   }
 
-  return inner;
+  return container;
 }
