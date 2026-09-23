@@ -5,7 +5,6 @@ import { useMutation } from '@tanstack/react-query';
 import { Screen } from '../../components/ui/screen';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
 import { useAuthStore } from '../../lib/auth-store';
 import { patientApi, ApiError } from '../../lib/api';
 
@@ -19,15 +18,12 @@ export default function OtpScreen() {
   }>();
 
   const phone = params.phone || '';
-  const devCode = params.devCode || '';
-  const isNewPatient = params.isNew === 'true';
+  const devCode = params.devCode || '123456';
 
   const clinic = useAuthStore((s) => s.clinic);
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  const [otpCode, setOtpCode] = useState(devCode || '');
-  const [firstName, setFirstName] = useState(params.firstName || '');
-  const [lastName, setLastName] = useState(params.lastName || '');
+  const [otpCode, setOtpCode] = useState(devCode);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(30);
 
@@ -40,14 +36,11 @@ export default function OtpScreen() {
 
   const verifyOtpMutation = useMutation({
     mutationFn: async () => {
-      const clinicId = clinic?.id || process.env.EXPO_PUBLIC_DEFAULT_CLINIC_ID || '';
-      const profile =
-        isNewPatient || firstName.trim()
-          ? {
-              first_name: firstName.trim() || 'New',
-              last_name: lastName.trim() || 'Patient',
-            }
-          : undefined;
+      const clinicId = clinic?.id || process.env.EXPO_PUBLIC_DEFAULT_CLINIC_ID || 'b398700a-f746-4a45-afc0-b1020cda02a8';
+      const profile = {
+        first_name: params.firstName?.trim() || 'Demo',
+        last_name: params.lastName?.trim() || 'Patient',
+      };
 
       return await patientApi.verifyOtp(phone, otpCode.trim(), clinicId, profile);
     },
@@ -73,7 +66,7 @@ export default function OtpScreen() {
 
   const resendOtpMutation = useMutation({
     mutationFn: async () => {
-      const clinicId = clinic?.id || process.env.EXPO_PUBLIC_DEFAULT_CLINIC_ID || '';
+      const clinicId = clinic?.id || process.env.EXPO_PUBLIC_DEFAULT_CLINIC_ID || 'b398700a-f746-4a45-afc0-b1020cda02a8';
       return await patientApi.sendOtp(phone, clinicId);
     },
     onSuccess: (data) => {
@@ -98,21 +91,17 @@ export default function OtpScreen() {
       setErrorMessage('Please enter the 6-digit verification code.');
       return;
     }
-    if (isNewPatient && !firstName.trim()) {
-      setErrorMessage('Please enter your first name.');
-      return;
-    }
 
     verifyOtpMutation.mutate();
   };
 
   return (
     <Screen scroll className="p-6">
-      <View style={{ padding: 24 }}>
+      <View style={{ padding: 24, paddingTop: 32 }}>
         {/* Back Link */}
         <TouchableOpacity
           onPress={() => router.back()}
-          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}
           activeOpacity={0.7}
         >
           <Text style={{ color: '#059669', fontWeight: '600', fontSize: 15 }}>
@@ -124,18 +113,18 @@ export default function OtpScreen() {
         <View style={{ marginBottom: 24 }}>
           <View
             style={{
-              width: 52,
-              height: 52,
-              borderRadius: 16,
+              width: 56,
+              height: 56,
+              borderRadius: 20,
               backgroundColor: '#ecfdf5',
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 16,
-              borderWidth: 1,
+              borderWidth: 1.5,
               borderColor: '#a7f3d0',
             }}
           >
-            <Text style={{ fontSize: 24 }}>🔑</Text>
+            <Text style={{ fontSize: 26 }}>🔑</Text>
           </View>
           <Text
             style={{
@@ -148,66 +137,64 @@ export default function OtpScreen() {
             Verify your phone
           </Text>
           <Text style={{ fontSize: 14, color: '#64748b', marginTop: 6, lineHeight: 20 }}>
-            Enter the 6-digit verification code sent to{' '}
+            Enter the 6-digit verification code for{' '}
             <Text style={{ fontWeight: '700', color: '#0f172a' }}>{phone}</Text>
           </Text>
         </View>
 
-        {/* Mock Dev Code Quick Tap Banner */}
-        {devCode ? (
-          <TouchableOpacity
-            onPress={() => setOtpCode(devCode)}
-            activeOpacity={0.8}
-            style={{
-              backgroundColor: '#ecfdf5',
-              borderWidth: 1.5,
-              borderColor: '#6ee7b7',
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 20,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <View>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: '800',
-                  color: '#065f46',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                }}
-              >
-                🧪 Dev Mode Mock Code
-              </Text>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: '800',
-                  color: '#047857',
-                  letterSpacing: 4,
-                  marginTop: 2,
-                }}
-              >
-                {devCode}
-              </Text>
-            </View>
-            <View
+        {/* Demo Mode Code Quick Tap Banner */}
+        <TouchableOpacity
+          onPress={() => setOtpCode(devCode || '123456')}
+          activeOpacity={0.8}
+          style={{
+            backgroundColor: '#ecfdf5',
+            borderWidth: 1.5,
+            borderColor: '#6ee7b7',
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <View>
+            <Text
               style={{
-                backgroundColor: '#059669',
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 8,
+                fontSize: 11,
+                fontWeight: '800',
+                color: '#065f46',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
               }}
             >
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>
-                Auto-Filled ✓
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ) : null}
+              Demo Verification Code
+            </Text>
+            <Text
+              style={{
+                fontSize: 22,
+                fontWeight: '800',
+                color: '#047857',
+                letterSpacing: 4,
+                marginTop: 2,
+              }}
+            >
+              {devCode || '123456'}
+            </Text>
+          </View>
+          <View
+            style={{
+              backgroundColor: '#059669',
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>
+              Auto-Filled ✓
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Error Banner */}
         {errorMessage ? (
@@ -228,47 +215,20 @@ export default function OtpScreen() {
         ) : null}
 
         {/* 6-Digit Code Input */}
-        <Input
-          label="6-Digit Verification Code"
-          placeholder="000000"
-          value={otpCode}
-          onChangeText={(text) => {
-            setOtpCode(text.replace(/[^0-9]/g, ''));
-            if (errorMessage) setErrorMessage(null);
-          }}
-          keyboardType="number-pad"
-          maxLength={6}
-          helperText="Enter 6-digit one-time passcode"
-        />
-
-        {/* New Patient Registration Details (if not provided on previous screen) */}
-        {isNewPatient && (!params.firstName || !firstName) ? (
-          <Card
-            style={{
-              backgroundColor: '#f8fafc',
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 16,
-              borderColor: '#e2e8f0',
+        <View style={{ marginBottom: 20 }}>
+          <Input
+            label="6-Digit Verification Code"
+            placeholder="123456"
+            value={otpCode}
+            onChangeText={(text) => {
+              setOtpCode(text.replace(/[^0-9]/g, ''));
+              if (errorMessage) setErrorMessage(null);
             }}
-          >
-            <Text style={{ fontSize: 14, fontWeight: '700', color: '#1e293b', marginBottom: 12 }}>
-              👋 Welcome! Tell us your name
-            </Text>
-            <Input
-              label="First Name *"
-              placeholder="e.g. Ayesha"
-              value={firstName}
-              onChangeText={setFirstName}
-            />
-            <Input
-              label="Last Name"
-              placeholder="e.g. Khan"
-              value={lastName}
-              onChangeText={setLastName}
-            />
-          </Card>
-        ) : null}
+            keyboardType="number-pad"
+            maxLength={6}
+            helperText="Demo mode: use 123456"
+          />
+        </View>
 
         {/* Verify Button */}
         <Button
@@ -303,6 +263,16 @@ export default function OtpScreen() {
               </Text>
             </TouchableOpacity>
           )}
+        </View>
+
+        {/* Footer Branding */}
+        <View style={{ marginTop: 32, alignItems: 'center' }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: '#64748b' }}>
+            Bright Smile Dental Clinic
+          </Text>
+          <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+            Your trusted dental care partner
+          </Text>
         </View>
       </View>
     </Screen>

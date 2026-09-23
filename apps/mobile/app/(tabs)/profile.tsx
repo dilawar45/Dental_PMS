@@ -31,7 +31,7 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await clearAuth();
-          router.replace('/clinic-picker');
+          router.replace('/(auth)/phone');
         },
       },
     ]);
@@ -218,13 +218,13 @@ export default function ProfileScreen() {
 
       <View className="items-center pb-8">
         <View className="flex-row items-center mb-1">
-          <ShieldCheck color="#94a3b8" size={14} />
-          <Text className="text-xs text-slate-400 ml-1">
-            HIPAA & GDPR Compliant Medical Architecture
+          <ShieldCheck color="#059669" size={14} />
+          <Text className="text-xs font-semibold text-slate-500 ml-1">
+            Bright Smile Dental Clinic
           </Text>
         </View>
         <Text className="text-xs text-slate-400">
-          Dental PMS Mobile • Expo SDK 54
+          Your trusted dental care partner
         </Text>
       </View>
     </Screen>

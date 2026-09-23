@@ -53,7 +53,7 @@ export async function apiClient<T>(
 
   if (response.status === 401 && !skipAuth) {
     await useAuthStore.getState().clearAuth();
-    router.replace('/clinic-picker');
+    router.replace('/(auth)/phone');
     throw new ApiError(401, 'Unauthorized - Session expired');
   }
 

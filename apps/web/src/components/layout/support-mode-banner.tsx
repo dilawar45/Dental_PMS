@@ -27,8 +27,8 @@ export function SupportModeBanner({
       setMinutesLeft(left);
       if (left <= 0) {
         // Auto exit on expiration
-        startTransition(async () => {
-          await exitSupportModeAction();
+        startTransition(() => {
+          void exitSupportModeAction();
         });
       }
     }, 15000);
@@ -65,8 +65,8 @@ export function SupportModeBanner({
           id="exit-support-mode-btn"
           disabled={isPending}
           onClick={() => {
-            startTransition(async () => {
-              await exitSupportModeAction();
+            startTransition(() => {
+              void exitSupportModeAction();
             });
           }}
           className="px-3 py-1 bg-slate-950 hover:bg-slate-800 text-amber-400 rounded font-semibold text-xs transition shadow hover:shadow-md cursor-pointer disabled:opacity-50"

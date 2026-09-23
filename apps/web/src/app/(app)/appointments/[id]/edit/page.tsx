@@ -14,7 +14,7 @@ interface EditAppointmentPageProps {
   }>;
 }
 
-export default async function EditAppointmentPage({ params }: EditAppointmentPageProps) {
+export default async function EditAppointmentPage({ params }: EditAppointmentPageProps): Promise<React.JSX.Element> {
   const { user } = await requireRole(['owner', 'receptionist']);
   const { id } = await params;
 

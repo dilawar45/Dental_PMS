@@ -36,20 +36,23 @@ export async function POST(req: Request) {
     }
 
     const { phone, clinic_id } = parsed.data;
+    const isDemoMode = process.env['DEMO_OTP_MODE'] === 'true';
 
-    // Rate limiting: max 3 requests per phone per 15 minutes
-    const rateCheck = await checkSendOtpRateLimit(phone);
-    if (!rateCheck.allowed) {
-      return withCors(
-        NextResponse.json(
-          {
-            error: 'Too many OTP requests. Please wait before trying again.',
-            reset_seconds: rateCheck.resetSeconds,
-          },
-          { status: 429 }
-        ),
-        req
-      );
+    // Rate limiting: max 3 requests per phone per 15 minutes (skipped in demo mode)
+    if (!isDemoMode) {
+      const rateCheck = await checkSendOtpRateLimit(phone);
+      if (!rateCheck.allowed) {
+        return withCors(
+          NextResponse.json(
+            {
+              error: 'Too many OTP requests. Please wait before trying again.',
+              reset_seconds: rateCheck.resetSeconds,
+            },
+            { status: 429 }
+          ),
+          req
+        );
+      }
     }
 
     const db = getDefaultDb();
@@ -63,6 +66,17 @@ export async function POST(req: Request) {
         .limit(1);
       return p;
     });
+
+    if (isDemoMode) {
+      return withCors(
+        NextResponse.json({
+          success: true,
+          is_new_patient: !existingPatient,
+          dev_code: '123456',
+        }),
+        req
+      );
+    }
 
     const isDev =
       process.env['OTP_PROVIDER'] === 'mock' ||

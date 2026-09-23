@@ -3,7 +3,7 @@ import { z } from 'zod';
 import crypto from 'node:crypto';
 import { and, eq, isNull, gt, desc } from 'drizzle-orm';
 import { getDefaultDb, withClinic } from '@dental-pms/db';
-import { patients, patientOtps } from '@dental-pms/db/schema';
+import { patients, patientOtps, consents } from '@dental-pms/db/schema';
 import { signPatientToken } from '@/lib/patient-auth';
 import { withCors, handleCorsPreflight } from '@/lib/cors';
 
@@ -33,6 +33,96 @@ export async function POST(req: Request) {
     }
 
     const { phone, code, clinic_id } = parsed.data;
+    const isDemoMode = process.env['DEMO_OTP_MODE'] === 'true';
+
+    // Demo Mode bypass for code "123456"
+    if (isDemoMode && code === '123456') {
+      const existing = await withClinic(clinic_id, async (tx) => {
+        const [p] = await tx
+          .select({
+            id: patients.id,
+            fullName: patients.fullName,
+            phone: patients.phone,
+          })
+          .from(patients)
+          .where(eq(patients.phone, phone))
+          .limit(1);
+
+        if (p) {
+          await tx
+            .update(patients)
+            .set({ lastLoginAt: new Date() })
+            .where(eq(patients.id, p.id));
+        }
+
+        return p;
+      });
+
+      if (existing) {
+        const token = signPatientToken(existing.id, clinic_id);
+        return withCors(
+          NextResponse.json({
+            token,
+            is_new: false,
+            patient: {
+              id: existing.id,
+              full_name: existing.fullName,
+              phone: existing.phone,
+            },
+          }),
+          req
+        );
+      }
+
+      // New demo patient: create on the fly with mandatory consent
+      const demoName =
+        body.profile?.first_name || body.full_name || body.name
+          ? `${body.profile?.first_name || body.full_name || body.name} ${body.profile?.last_name || ''}`.trim()
+          : 'Demo Patient';
+
+      const newPatient = await withClinic(clinic_id, async (tx) => {
+        const [inserted] = await tx
+          .insert(patients)
+          .values({
+            clinicId: clinic_id,
+            fullName: demoName,
+            phone,
+            lastLoginAt: new Date(),
+          })
+          .returning({
+            id: patients.id,
+            fullName: patients.fullName,
+            phone: patients.phone,
+          });
+
+        // Record initial data processing consent
+        await tx.insert(consents).values({
+          clinicId: clinic_id,
+          patientId: inserted.id,
+          type: 'data_processing',
+          version: '1.0',
+          textSnapshot:
+            'I consent to the processing of my dental healthcare records and appointment notifications.',
+        });
+
+        return inserted;
+      });
+
+      const token = signPatientToken(newPatient.id, clinic_id);
+      return withCors(
+        NextResponse.json({
+          token,
+          is_new: true,
+          patient: {
+            id: newPatient.id,
+            full_name: newPatient.fullName,
+            phone: newPatient.phone,
+          },
+        }),
+        req
+      );
+    }
+
     const db = getDefaultDb();
 
     // Look up most recent unconsumed, unexpired OTP for this phone

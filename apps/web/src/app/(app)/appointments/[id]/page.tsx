@@ -25,7 +25,7 @@ interface AppointmentDetailPageProps {
   }>;
 }
 
-export default async function AppointmentDetailPage({ params }: AppointmentDetailPageProps) {
+export default async function AppointmentDetailPage({ params }: AppointmentDetailPageProps): Promise<React.JSX.Element> {
   const { user } = await requireUser();
   const { id } = await params;
 

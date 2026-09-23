@@ -5,21 +5,17 @@ import { useMutation } from '@tanstack/react-query';
 import { Screen } from '../../components/ui/screen';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
 import { useAuthStore } from '../../lib/auth-store';
 import { patientApi, ApiError } from '../../lib/api';
 
 export default function PhoneScreen() {
   const clinic = useAuthStore((s) => s.clinic);
-  const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const sendOtpMutation = useMutation({
     mutationFn: async (fullPhone: string) => {
-      const clinicId = clinic?.id || process.env.EXPO_PUBLIC_DEFAULT_CLINIC_ID || '';
+      const clinicId = clinic?.id || process.env.EXPO_PUBLIC_DEFAULT_CLINIC_ID || 'b398700a-f746-4a45-afc0-b1020cda02a8';
       return await patientApi.sendOtp(fullPhone, clinicId);
     },
     onSuccess: (data, fullPhone) => {
@@ -27,17 +23,14 @@ export default function PhoneScreen() {
       if (data.dev_code) {
         Alert.alert(
           'Verification Code',
-          `Dev Mode OTP Code: ${data.dev_code}\n(Auto-filled on the next screen)`
+          `Demo OTP Code: ${data.dev_code}\n(Auto-filled on the next screen)`
         );
       }
       router.push({
         pathname: '/(auth)/otp',
         params: {
           phone: fullPhone,
-          devCode: data.dev_code || '',
-          isNew: authMode === 'register' || data.is_new_patient ? 'true' : 'false',
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
+          devCode: data.dev_code || '123456',
         },
       });
     },
@@ -52,21 +45,13 @@ export default function PhoneScreen() {
     },
   });
 
-  const handleQuickFill = (phone: string, first: string, last: string) => {
+  const handleQuickFill = (phone: string) => {
     setPhoneNumber(phone.replace('+92', ''));
-    setFirstName(first);
-    setLastName(last);
     setErrorMessage(null);
   };
 
   const handleSubmit = () => {
     setErrorMessage(null);
-
-    if (authMode === 'register' && !firstName.trim()) {
-      setErrorMessage('Please enter your first name.');
-      return;
-    }
-
     const cleaned = phoneNumber.replace(/[^0-9]/g, '');
 
     // Format into +92XXXXXXXXXX
@@ -87,129 +72,50 @@ export default function PhoneScreen() {
 
   return (
     <Screen scroll className="p-6">
-      <View style={{ padding: 24 }}>
-        {/* Top Back Nav */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}
-          activeOpacity={0.7}
-        >
-          <Text style={{ color: '#059669', fontWeight: '600', fontSize: 15 }}>
-            ← Change Clinic
-          </Text>
-        </TouchableOpacity>
-
-        {/* Clinic Pill */}
-        <View
-          style={{
-            alignSelf: 'flex-start',
-            backgroundColor: '#d1fae5',
-            paddingHorizontal: 12,
-            paddingVertical: 5,
-            borderRadius: 20,
-            marginBottom: 16,
-          }}
-        >
-          <Text
+      <View style={{ padding: 24, paddingTop: 32 }}>
+        {/* Brand Logo & Header */}
+        <View style={{ alignItems: 'center', marginBottom: 32 }}>
+          <View
             style={{
-              fontSize: 12,
-              fontWeight: '700',
-              color: '#065f46',
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
-            }}
-          >
-            🏥 {clinic?.name || 'Bright Smile Dental'}
-          </Text>
-        </View>
-
-        {/* Auth Mode Toggle: Sign In vs Register */}
-        <View
-          style={{
-            flexDirection: 'row',
-            backgroundColor: '#f1f5f9',
-            borderRadius: 14,
-            padding: 4,
-            marginBottom: 24,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => {
-              setAuthMode('signin');
-              setErrorMessage(null);
-            }}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              borderRadius: 10,
-              backgroundColor: authMode === 'signin' ? '#ffffff' : 'transparent',
+              width: 80,
+              height: 80,
+              borderRadius: 28,
+              backgroundColor: '#ecfdf5',
               alignItems: 'center',
-              shadowColor: authMode === 'signin' ? '#000000' : 'transparent',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: authMode === 'signin' ? 0.08 : 0,
-              shadowRadius: 2,
-              elevation: authMode === 'signin' ? 2 : 0,
+              justifyContent: 'center',
+              marginBottom: 16,
+              borderWidth: 2,
+              borderColor: '#a7f3d0',
+              shadowColor: '#059669',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+              elevation: 4,
             }}
-            activeOpacity={0.8}
           >
-            <Text
-              style={{
-                fontSize: 15,
-                fontWeight: authMode === 'signin' ? '700' : '500',
-                color: authMode === 'signin' ? '#0f172a' : '#64748b',
-              }}
-            >
-              Sign In
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              setAuthMode('register');
-              setErrorMessage(null);
-            }}
-            style={{
-              flex: 1,
-              paddingVertical: 10,
-              borderRadius: 10,
-              backgroundColor: authMode === 'register' ? '#ffffff' : 'transparent',
-              alignItems: 'center',
-              shadowColor: authMode === 'register' ? '#000000' : 'transparent',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: authMode === 'register' ? 0.08 : 0,
-              shadowRadius: 2,
-              elevation: authMode === 'register' ? 2 : 0,
-            }}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={{
-                fontSize: 15,
-                fontWeight: authMode === 'register' ? '700' : '500',
-                color: authMode === 'register' ? '#059669' : '#64748b',
-              }}
-            >
-              Register (New)
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Screen Heading */}
-        <View style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 40 }}>🦷</Text>
+          </View>
           <Text
             style={{
               fontSize: 26,
               fontWeight: '800',
               color: '#0f172a',
+              textAlign: 'center',
               letterSpacing: -0.5,
             }}
           >
-            {authMode === 'signin' ? 'Welcome back' : 'Create patient account'}
+            Welcome to Bright Smile Dental
           </Text>
-          <Text style={{ fontSize: 14, color: '#64748b', marginTop: 6, lineHeight: 20 }}>
-            {authMode === 'signin'
-              ? 'Enter your mobile number to receive a one-time login code.'
-              : 'Register your details to book appointments and track treatments.'}
+          <Text
+            style={{
+              fontSize: 15,
+              color: '#64748b',
+              textAlign: 'center',
+              marginTop: 6,
+              lineHeight: 22,
+            }}
+          >
+            Enter your mobile number to continue
           </Text>
         </View>
 
@@ -231,52 +137,27 @@ export default function PhoneScreen() {
           </View>
         ) : null}
 
-        {/* Registration Fields */}
-        {authMode === 'register' ? (
-          <View style={{ gap: 4, marginBottom: 4 }}>
-            <Input
-              label="First Name *"
-              placeholder="e.g. Ayesha"
-              value={firstName}
-              onChangeText={(text) => {
-                setFirstName(text);
-                if (errorMessage) setErrorMessage(null);
-              }}
-              autoCapitalize="words"
-            />
-            <Input
-              label="Last Name"
-              placeholder="e.g. Khan"
-              value={lastName}
-              onChangeText={setLastName}
-              autoCapitalize="words"
-            />
-          </View>
-        ) : null}
-
         {/* Phone Input */}
-        <Input
-          label="Mobile Number *"
-          placeholder="300 1234567"
-          value={phoneNumber}
-          onChangeText={(text) => {
-            setPhoneNumber(text);
-            if (errorMessage) setErrorMessage(null);
-          }}
-          keyboardType="phone-pad"
-          leftAddon="+92"
-          helperText="Enter 10-digit mobile number without leading 0"
-          maxLength={11}
-          autoFocus={authMode === 'signin'}
-        />
+        <View style={{ marginBottom: 20 }}>
+          <Input
+            label="Mobile Number *"
+            placeholder="300 1234567"
+            value={phoneNumber}
+            onChangeText={(text) => {
+              setPhoneNumber(text);
+              if (errorMessage) setErrorMessage(null);
+            }}
+            keyboardType="phone-pad"
+            leftAddon="+92"
+            helperText="Enter 10-digit mobile number without leading 0"
+            maxLength={11}
+            autoFocus
+          />
+        </View>
 
         {/* Submit CTA */}
         <Button
-          title={
-            authMode === 'signin'
-              ? 'Send Verification Code'
-              : 'Register & Send Code'
-          }
+          title={sendOtpMutation.isPending ? 'Sending Code...' : 'Send Code'}
           onPress={handleSubmit}
           loading={sendOtpMutation.isPending}
           disabled={phoneNumber.trim().length < 9}
@@ -284,22 +165,23 @@ export default function PhoneScreen() {
         />
 
         {/* Quick Demo Test Buttons */}
-        <View style={{ marginTop: 24 }}>
+        <View style={{ marginTop: 28 }}>
           <Text
             style={{
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: '700',
-              color: '#64748b',
+              color: '#94a3b8',
               textTransform: 'uppercase',
               letterSpacing: 0.5,
               marginBottom: 10,
+              textAlign: 'center',
             }}
           >
-            🧪 Quick Test Patient Accounts
+            Quick Demo Accounts
           </Text>
 
           <TouchableOpacity
-            onPress={() => handleQuickFill('3001234501', 'Muhammad', 'Usman')}
+            onPress={() => handleQuickFill('3001234501')}
             style={{
               backgroundColor: '#f8fafc',
               borderWidth: 1,
@@ -317,24 +199,24 @@ export default function PhoneScreen() {
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b' }}>
                 👤 Muhammad Usman
               </Text>
-              <Text style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                +92 300 1234501 • Has treatment & invoice history
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+                +92 300 1234501 • Seeded Patient
               </Text>
             </View>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#059669' }}>
-              Fill ➔
+              Auto-fill ➔
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => handleQuickFill('3001234502', 'Fatima', 'Zahra')}
+            onPress={() => handleQuickFill('3009998877')}
             style={{
               backgroundColor: '#f8fafc',
               borderWidth: 1,
               borderColor: '#e2e8f0',
               borderRadius: 12,
               padding: 12,
-              marginBottom: 16,
+              marginBottom: 24,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -343,34 +225,32 @@ export default function PhoneScreen() {
           >
             <View>
               <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b' }}>
-                👤 Fatima Zahra
+                👤 New Patient Test
               </Text>
-              <Text style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-                +92 300 1234502 • Seeded patient
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+                +92 300 9998877 • Tests Instant Account Creation
               </Text>
             </View>
             <Text style={{ fontSize: 12, fontWeight: '600', color: '#059669' }}>
-              Fill ➔
+              Auto-fill ➔
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Security Info Card */}
-        <Card
-          style={{
-            backgroundColor: '#f8fafc',
-            borderColor: '#e2e8f0',
-            borderRadius: 14,
-            padding: 14,
-          }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155', marginBottom: 2 }}>
-            🔒 Passwordless Security
+        {/* Patient Terms Note */}
+        <View style={{ marginTop: 8, alignItems: 'center' }}>
+          <Text
+            style={{
+              fontSize: 12,
+              color: '#94a3b8',
+              textAlign: 'center',
+              lineHeight: 18,
+              paddingHorizontal: 12,
+            }}
+          >
+            By continuing, you agree to our terms. This app is for patients of Bright Smile Dental.
           </Text>
-          <Text style={{ fontSize: 11, color: '#64748b', lineHeight: 16 }}>
-            Patients authenticate securely via one-time SMS verification code. No password creation or recovery headaches required.
-          </Text>
-        </Card>
+        </View>
       </View>
     </Screen>
   );

@@ -24,7 +24,7 @@ interface EditAppointmentFormProps {
   }>;
 }
 
-export function EditAppointmentForm({ appointment, dentists }: EditAppointmentFormProps) {
+export function EditAppointmentForm({ appointment, dentists }: EditAppointmentFormProps): React.JSX.Element {
   const router = useRouter();
 
   const toLocalISO = (isoStr: string) => {
