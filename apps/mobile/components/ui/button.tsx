@@ -26,6 +26,7 @@ export function Button({
   disabled,
   icon,
   className,
+  style,
   ...props
 }: ButtonProps) {
   const baseButtonStyles =
@@ -100,6 +101,9 @@ export function Button({
           className
         )
       )}
+      disabled={isDisabled}
+      activeOpacity={0.8}
+      {...props}
       style={[
         {
           flexDirection: 'row',
@@ -114,11 +118,8 @@ export function Button({
         },
         buttonStyleFallbacks,
         buttonSizeFallbacks,
-        props.style,
+        style,
       ]}
-      disabled={isDisabled}
-      activeOpacity={0.8}
-      {...props}
     >
       {loading ? (
         <ActivityIndicator

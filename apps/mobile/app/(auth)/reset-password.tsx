@@ -92,14 +92,11 @@ export default function ResetPasswordScreen() {
 
   return (
     <Screen className="bg-slate-50" style={{ backgroundColor: '#f8fafc' }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <ScrollView
         style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
-          keyboardShouldPersistTaps="handled"
-        >
           {/* Header Branding */}
           <View style={{ alignItems: 'center', marginBottom: 28 }}>
             <View
@@ -276,7 +273,6 @@ export default function ResetPasswordScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </Screen>
   );
 }

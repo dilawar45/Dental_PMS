@@ -7,7 +7,7 @@ interface CardProps extends ViewProps {
   children: React.ReactNode;
 }
 
-export function Card({ children, className, ...props }: CardProps) {
+export function Card({ children, className, style, ...props }: CardProps) {
   return (
     <View
       className={twMerge(
@@ -16,6 +16,7 @@ export function Card({ children, className, ...props }: CardProps) {
           className
         )
       )}
+      {...props}
       style={[
         {
           backgroundColor: '#ffffff',
@@ -29,9 +30,8 @@ export function Card({ children, className, ...props }: CardProps) {
           shadowRadius: 3,
           elevation: 2,
         },
-        props.style,
+        style,
       ]}
-      {...props}
     >
       {children}
     </View>

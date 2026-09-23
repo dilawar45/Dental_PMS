@@ -153,14 +153,11 @@ export default function RegisterScreen() {
 
   return (
     <Screen className="bg-slate-50" style={{ backgroundColor: '#f8fafc' }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <ScrollView
         style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 40, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 40, paddingBottom: 40 }}
-          keyboardShouldPersistTaps="handled"
-        >
           {/* Header Branding */}
           <View style={{ alignItems: 'center', marginBottom: 24 }}>
             <View
@@ -466,7 +463,6 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </Screen>
   );
 }

@@ -21,6 +21,7 @@ export function Screen({
   scroll = false,
   safeArea = true,
   className,
+  style,
   ...props
 }: ScreenProps) {
   const content = scroll ? (
@@ -29,19 +30,22 @@ export function Screen({
       contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
+      style={{ flex: 1 }}
     >
       {children}
     </ScrollView>
   ) : (
-    <View className="flex-1">{children}</View>
+    <View className="flex-1" style={{ flex: 1 }}>
+      {children}
+    </View>
   );
 
   const inner = (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: '#f8fafc' }}
       className={twMerge(clsx('flex-1 bg-slate-50', className))}
       {...props}
+      style={[{ flex: 1, backgroundColor: '#f8fafc' }, style]}
     >
       {content}
     </KeyboardAvoidingView>
