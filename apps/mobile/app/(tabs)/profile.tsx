@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen scroll className="p-6">
+    <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 14 }}>
       <View className="my-4">
         <Text className="text-2xl font-extrabold text-slate-900">
           Patient Profile

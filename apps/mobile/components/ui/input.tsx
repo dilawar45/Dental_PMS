@@ -4,6 +4,8 @@ import {
   Text,
   TextInput,
   TextInputProps,
+  ViewStyle,
+  StyleProp,
 } from 'react-native';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -13,6 +15,8 @@ interface InputProps extends TextInputProps {
   error?: string;
   helperText?: string;
   leftAddon?: string;
+  rightElement?: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export function Input({
@@ -20,15 +24,21 @@ export function Input({
   error,
   helperText,
   leftAddon,
+  rightElement,
+  containerStyle,
   className,
+  style,
   ...props
 }: InputProps) {
   return (
-    <View className="w-full mb-4" style={{ width: '100%', marginBottom: 16 }}>
+    <View
+      className="w-full mb-4"
+      style={[{ width: '100%', marginBottom: 16 }, containerStyle]}
+    >
       {label ? (
         <Text
           className="text-sm font-semibold text-slate-700 mb-1.5"
-          style={{ fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 6 }}
+          style={{ fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 }}
         >
           {label}
         </Text>
@@ -50,7 +60,8 @@ export function Input({
           borderColor: error ? '#ef4444' : '#cbd5e1',
           borderRadius: 14,
           paddingHorizontal: 14,
-          paddingVertical: 10,
+          paddingVertical: 8,
+          minHeight: 48,
         }}
       >
         {leftAddon ? (
@@ -69,17 +80,28 @@ export function Input({
             {leftAddon}
           </Text>
         ) : null}
+
         <TextInput
           placeholderTextColor="#94a3b8"
           className="flex-1 text-base text-slate-900"
-          style={{
-            flex: 1,
-            fontSize: 16,
-            color: '#0f172a',
-            padding: 0,
-          }}
+          style={[
+            {
+              flex: 1,
+              fontSize: 15,
+              color: '#0f172a',
+              paddingVertical: 2,
+              paddingHorizontal: 0,
+            },
+            style,
+          ]}
           {...props}
         />
+
+        {rightElement ? (
+          <View style={{ marginLeft: 8, justifyContent: 'center' }}>
+            {rightElement}
+          </View>
+        ) : null}
       </View>
 
       {error ? (

@@ -170,7 +170,7 @@ export default function BookAppointmentScreen() {
   // SUCCESS SCREEN
   if (isSuccess && bookedDetails) {
     return (
-      <Screen scroll className="p-6">
+      <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 14 }}>
         <View className="flex-1 items-center justify-center py-10">
           <View className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-5 border-4 border-emerald-200 shadow-sm">
             <CheckCircle2 color="#059669" size={48} />
@@ -237,7 +237,7 @@ export default function BookAppointmentScreen() {
 
   // WIZARD BOOKING FORM
   return (
-    <Screen scroll className="p-5">
+    <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 14 }}>
       {/* Top Header */}
       <View className="flex-row items-center my-3">
         <TouchableOpacity

@@ -4,8 +4,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Screen } from '../../components/ui/screen';
@@ -155,314 +153,318 @@ export default function RegisterScreen() {
     <Screen className="bg-slate-50" style={{ backgroundColor: '#f8fafc' }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: 20, paddingTop: 40, paddingBottom: 40 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 16,
+          paddingTop: 20,
+          paddingBottom: 36,
+        }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-          {/* Header Branding */}
-          <View style={{ alignItems: 'center', marginBottom: 24 }}>
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                backgroundColor: '#ecfdf5',
-                borderWidth: 1.5,
-                borderColor: '#a7f3d0',
-                borderRadius: 18,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <Text style={{ fontSize: 26 }}>🦷</Text>
-            </View>
-
-            <Text
-              style={{
-                fontSize: 22,
-                fontWeight: '800',
-                color: '#0f172a',
-                letterSpacing: -0.5,
-                marginBottom: 4,
-              }}
-            >
-              Create Patient Account
-            </Text>
-            <Text style={{ fontSize: 13, color: '#64748b' }}>
-              Join Bright Smile Dental for seamless care
-            </Text>
-          </View>
-
-          {/* Form Card */}
-          <Card
-            className="p-5 bg-white border border-slate-200 rounded-3xl shadow-sm"
+        {/* Header Branding */}
+        <View style={{ alignItems: 'center', marginBottom: 20 }}>
+          <View
             style={{
-              padding: 20,
-              backgroundColor: '#ffffff',
-              borderRadius: 24,
-              borderWidth: 1,
-              borderColor: '#e2e8f0',
-              marginBottom: 20,
+              width: 56,
+              height: 56,
+              backgroundColor: '#ecfdf5',
+              borderWidth: 1.5,
+              borderColor: '#a7f3d0',
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 10,
+              shadowColor: '#059669',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
             }}
           >
-            {/* Error Banner */}
-            {errorMessage ? (
+            <Text style={{ fontSize: 26 }}>🦷</Text>
+          </View>
+
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: '800',
+              color: '#0f172a',
+              letterSpacing: -0.4,
+              marginBottom: 3,
+            }}
+          >
+            Create Patient Account
+          </Text>
+          <Text style={{ fontSize: 13, color: '#64748b' }}>
+            Join Bright Smile Dental for seamless care
+          </Text>
+        </View>
+
+        {/* Form Card */}
+        <Card
+          style={{
+            padding: 18,
+            backgroundColor: '#ffffff',
+            borderRadius: 22,
+            borderWidth: 1,
+            borderColor: '#e2e8f0',
+            marginBottom: 16,
+          }}
+        >
+          {/* Error Banner */}
+          {errorMessage ? (
+            <View
+              style={{
+                backgroundColor: '#fef2f2',
+                borderWidth: 1,
+                borderColor: '#fecaca',
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 16,
+              }}
+            >
+              <Text style={{ color: '#dc2626', fontSize: 13, fontWeight: '500' }}>
+                {errorMessage}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Full Name */}
+          <Input
+            label="Full Name"
+            placeholder="e.g. Muhammad Tariq"
+            value={fullName}
+            onChangeText={(text) => {
+              setFullName(text);
+              if (errorMessage) setErrorMessage(null);
+            }}
+            autoCapitalize="words"
+          />
+
+          {/* CNIC with auto-format */}
+          <Input
+            label="CNIC (National ID)"
+            placeholder="35201-1234567-1"
+            value={cnic}
+            onChangeText={handleCnicChange}
+            keyboardType="number-pad"
+            maxLength={15}
+          />
+
+          {/* Phone */}
+          <Input
+            label="Mobile Number"
+            placeholder="0300 1234567"
+            value={phone}
+            onChangeText={(text) => {
+              setPhone(text);
+              if (errorMessage) setErrorMessage(null);
+            }}
+            keyboardType="phone-pad"
+            leftAddon="+92"
+          />
+
+          {/* Age & Gender in row */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 }}>
+              Age & Gender
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+              <View style={{ width: 85 }}>
+                <Input
+                  placeholder="Age"
+                  value={age}
+                  onChangeText={(text) => {
+                    setAge(text.replace(/\D/g, ''));
+                    if (errorMessage) setErrorMessage(null);
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  containerStyle={{ marginBottom: 0 }}
+                />
+              </View>
+
+              {/* Gender Segmented Control */}
               <View
                 style={{
-                  backgroundColor: '#fef2f2',
-                  borderWidth: 1,
-                  borderColor: '#fecaca',
-                  borderRadius: 12,
-                  padding: 12,
-                  marginBottom: 16,
+                  flex: 1,
+                  flexDirection: 'row',
+                  backgroundColor: '#f1f5f9',
+                  borderRadius: 14,
+                  padding: 3,
+                  minHeight: 48,
+                  alignItems: 'center',
                 }}
               >
-                <Text style={{ color: '#dc2626', fontSize: 13, fontWeight: '500' }}>
-                  {errorMessage}
-                </Text>
-              </View>
-            ) : null}
-
-            {/* Full Name */}
-            <Input
-              label="Full Name"
-              placeholder="e.g. Muhammad Tariq"
-              value={fullName}
-              onChangeText={(text) => {
-                setFullName(text);
-                if (errorMessage) setErrorMessage(null);
-              }}
-              autoCapitalize="words"
-            />
-
-            {/* CNIC with auto-format */}
-            <Input
-              label="CNIC (National ID)"
-              placeholder="35201-1234567-1"
-              value={cnic}
-              onChangeText={handleCnicChange}
-              keyboardType="number-pad"
-              maxLength={15}
-            />
-
-            {/* Phone */}
-            <Input
-              label="Mobile Number"
-              placeholder="0300 1234567"
-              value={phone}
-              onChangeText={(text) => {
-                setPhone(text);
-                if (errorMessage) setErrorMessage(null);
-              }}
-              keyboardType="phone-pad"
-              leftAddon="+92"
-            />
-
-            {/* Age & Gender in row */}
-            <View style={{ marginBottom: 16 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 6 }}>
-                Age & Gender
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={{ width: 90 }}>
-                  <Input
-                    placeholder="Age"
-                    value={age}
-                    onChangeText={(text) => {
-                      setAge(text.replace(/\D/g, ''));
-                      if (errorMessage) setErrorMessage(null);
+                {(['male', 'female', 'other'] as const).map((g) => (
+                  <TouchableOpacity
+                    key={g}
+                    onPress={() => setGender(g)}
+                    style={{
+                      flex: 1,
+                      height: 42,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 11,
+                      backgroundColor: gender === g ? '#ffffff' : 'transparent',
+                      shadowColor: gender === g ? '#000' : 'transparent',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: gender === g ? 0.08 : 0,
+                      shadowRadius: 2,
+                      elevation: gender === g ? 1 : 0,
                     }}
-                    keyboardType="number-pad"
-                    maxLength={3}
-                  />
-                </View>
-
-                {/* Gender Segmented Control */}
-                <View
-                  style={{
-                    flex: 1,
-                    flexDirection: 'row',
-                    backgroundColor: '#f1f5f9',
-                    borderRadius: 12,
-                    padding: 3,
-                    height: 48,
-                  }}
-                >
-                  {(['male', 'female', 'other'] as const).map((g) => (
-                    <TouchableOpacity
-                      key={g}
-                      onPress={() => setGender(g)}
+                  >
+                    <Text
                       style={{
-                        flex: 1,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 10,
-                        backgroundColor: gender === g ? '#ffffff' : 'transparent',
-                        shadowColor: gender === g ? '#000' : 'transparent',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: gender === g ? 0.08 : 0,
-                        shadowRadius: 2,
-                        elevation: gender === g ? 1 : 0,
+                        fontSize: 12,
+                        fontWeight: gender === g ? '700' : '500',
+                        color: gender === g ? '#059669' : '#64748b',
+                        textTransform: 'capitalize',
                       }}
                     >
-                      <Text
-                        style={{
-                          fontSize: 12,
-                          fontWeight: gender === g ? '700' : '500',
-                          color: gender === g ? '#059669' : '#64748b',
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {g}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                      {g}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
+          </View>
 
-            {/* Email */}
-            <Input
-              label="Email Address"
-              placeholder="name@example.com"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (errorMessage) setErrorMessage(null);
-              }}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+          {/* Email */}
+          <Input
+            label="Email Address"
+            placeholder="name@example.com"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errorMessage) setErrorMessage(null);
+            }}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-            {/* Password */}
-            <View style={{ position: 'relative', marginBottom: 4 }}>
-              <Input
-                label="Password"
-                placeholder="At least 8 chars (1 letter + 1 number)"
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  if (errorMessage) setErrorMessage(null);
-                }}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-              />
+          {/* Password */}
+          <Input
+            label="Password"
+            placeholder="At least 8 chars (1 letter + 1 number)"
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errorMessage) setErrorMessage(null);
+            }}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            rightElement={
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: 14,
-                  top: 36,
-                  padding: 6,
-                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Text style={{ fontSize: 13, color: '#059669', fontWeight: '600' }}>
                   {showPassword ? 'Hide' : 'Show'}
                 </Text>
               </TouchableOpacity>
-            </View>
+            }
+          />
 
-            {/* Confirm Password */}
-            <View style={{ position: 'relative', marginBottom: 12 }}>
-              <Input
-                label="Confirm Password"
-                placeholder="Re-enter password"
-                value={confirmPassword}
-                onChangeText={(text) => {
-                  setConfirmPassword(text);
-                  if (errorMessage) setErrorMessage(null);
-                }}
-                secureTextEntry={!showConfirmPassword}
-                autoCapitalize="none"
-              />
+          {/* Confirm Password */}
+          <Input
+            label="Confirm Password"
+            placeholder="Re-enter password"
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              if (errorMessage) setErrorMessage(null);
+            }}
+            secureTextEntry={!showConfirmPassword}
+            autoCapitalize="none"
+            rightElement={
               <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{
-                  position: 'absolute',
-                  right: 14,
-                  top: 36,
-                  padding: 6,
-                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Text style={{ fontSize: 13, color: '#059669', fontWeight: '600' }}>
                   {showConfirmPassword ? 'Hide' : 'Show'}
                 </Text>
               </TouchableOpacity>
+            }
+          />
+
+          {/* Bilingual Consent Checkbox */}
+          <TouchableOpacity
+            onPress={() => setConsentGranted(!consentGranted)}
+            activeOpacity={0.8}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              backgroundColor: '#f8fafc',
+              borderWidth: 1,
+              borderColor: '#e2e8f0',
+              borderRadius: 14,
+              padding: 12,
+              marginBottom: 18,
+            }}
+          >
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 6,
+                borderWidth: 2,
+                borderColor: consentGranted ? '#059669' : '#cbd5e1',
+                backgroundColor: consentGranted ? '#059669' : '#ffffff',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 10,
+                marginTop: 2,
+              }}
+            >
+              {consentGranted && (
+                <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '800' }}>✓</Text>
+              )}
             </View>
-
-            {/* Bilingual Consent Checkbox */}
-            <TouchableOpacity
-              onPress={() => setConsentGranted(!consentGranted)}
-              activeOpacity={0.8}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'flex-start',
-                backgroundColor: '#f8fafc',
-                borderWidth: 1,
-                borderColor: '#e2e8f0',
-                borderRadius: 14,
-                padding: 12,
-                marginBottom: 20,
-              }}
-            >
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 6,
-                  borderWidth: 2,
-                  borderColor: consentGranted ? '#059669' : '#cbd5e1',
-                  backgroundColor: consentGranted ? '#059669' : '#ffffff',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 10,
-                  marginTop: 2,
-                }}
-              >
-                {consentGranted && (
-                  <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '800' }}>✓</Text>
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, color: '#334155', lineHeight: 17, marginBottom: 2 }}>
-                  I consent to Bright Smile Dental processing my data for dental care and appointments.
-                </Text>
-                <Text style={{ fontSize: 11, color: '#64748b', lineHeight: 16 }}>
-                  میں برائٹ سمائل ڈینٹل کو اپنے علاج کے لیے ڈیٹا استعمال کرنے کی اجازت دیتا/دیتی ہوں۔
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Submit Button */}
-            <Button
-              title="Create Account"
-              variant="primary"
-              size="lg"
-              loading={loading}
-              disabled={loading}
-              onPress={handleRegister}
-              style={{
-                backgroundColor: '#059669',
-                borderRadius: 14,
-              }}
-            />
-          </Card>
-
-          {/* Navigation to Login */}
-          <View style={{ alignItems: 'center' }}>
-            <TouchableOpacity
-              onPress={() => router.push('/(auth)/login')}
-              activeOpacity={0.7}
-              style={{ paddingVertical: 10 }}
-            >
-              <Text style={{ fontSize: 14, color: '#64748b' }}>
-                Already have an account?{' '}
-                <Text style={{ color: '#059669', fontWeight: '700' }}>
-                  Sign In
-                </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 12, color: '#334155', lineHeight: 17, marginBottom: 2 }}>
+                I consent to Bright Smile Dental processing my data for dental care and appointments.
               </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+              <Text style={{ fontSize: 11, color: '#64748b', lineHeight: 16 }}>
+                میں برائٹ سمائل ڈینٹل کو اپنے علاج کے لیے ڈیٹا استعمال کرنے کی اجازت دیتا/دیتی ہوں۔
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Submit Button */}
+          <Button
+            title="Create Account"
+            variant="primary"
+            size="lg"
+            loading={loading}
+            disabled={loading}
+            onPress={handleRegister}
+            style={{
+              backgroundColor: '#059669',
+              borderRadius: 14,
+              paddingVertical: 14,
+            }}
+          />
+        </Card>
+
+        {/* Navigation to Login */}
+        <View style={{ alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/login')}
+            activeOpacity={0.7}
+            style={{ paddingVertical: 8 }}
+          >
+            <Text style={{ fontSize: 14, color: '#64748b' }}>
+              Already have an account?{' '}
+              <Text style={{ color: '#059669', fontWeight: '700' }}>
+                Sign In
+              </Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </Screen>
   );
 }

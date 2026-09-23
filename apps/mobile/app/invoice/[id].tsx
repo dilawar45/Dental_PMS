@@ -119,8 +119,12 @@ export default function InvoiceDetailScreen() {
   const hasBalance = invoice.balance > 0;
 
   return (
-    <Screen className="p-5">
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <Screen style={{ backgroundColor: '#f8fafc' }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 18, paddingTop: 14, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Navigation Bar */}
         <View className="flex-row items-center justify-between my-3">
           <TouchableOpacity

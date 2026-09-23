@@ -107,8 +107,10 @@ export default function RecordsScreen() {
   );
 
   return (
-    <Screen className="p-5">
+    <Screen style={{ backgroundColor: '#f8fafc' }}>
       <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 18, paddingTop: 14, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
