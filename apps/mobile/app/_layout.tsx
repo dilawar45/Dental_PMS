@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '../lib/query-client';
 import { useAuthStore } from '../lib/auth-store';
 import { ErrorBoundary } from '../components/error-boundary';
@@ -62,7 +62,7 @@ export default function RootLayout() {
   }, [isHydrated, token, patient?.id, registeredDeviceId, setRegisteredDeviceId]);
 
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+    <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <StatusBar style="dark" />
         <ErrorBoundary fallbackTitle="Application Error">
@@ -73,7 +73,22 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
+            <Stack.Screen
+              name="(auth)/login"
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="(auth)/register"
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="(auth)/forgot-password"
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="(auth)/reset-password"
+              options={{ animation: 'slide_from_right' }}
+            />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="book-appointment"

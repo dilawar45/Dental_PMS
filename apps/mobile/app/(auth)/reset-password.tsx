@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Screen } from '../../components/ui/screen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
@@ -91,7 +91,7 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <Screen className="bg-slate-50" style={{ backgroundColor: '#f8fafc' }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: '#f8fafc' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
@@ -273,6 +273,6 @@ export default function ResetPasswordScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }

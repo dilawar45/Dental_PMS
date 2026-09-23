@@ -6,7 +6,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Screen } from '../../components/ui/screen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
@@ -150,7 +150,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <Screen className="bg-slate-50" style={{ backgroundColor: '#f8fafc' }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: '#f8fafc' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
@@ -465,6 +465,6 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
