@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useAuthStore, PatientProfile } from './auth-store';
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'http://192.168.100.21:3000';
+  process.env.EXPO_PUBLIC_API_URL || 'https://dentals-amber.vercel.app';
 
 export class ApiError extends Error {
   constructor(

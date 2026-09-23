@@ -1,20 +1,46 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
 import { patientApi } from './api';
 
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+// Dynamic require prevents expo-notifications from executing and throwing
+// the SDK 53/54 fatal error during module evaluation inside Expo Go on Android
+function getNotificationsModule() {
+  if (Platform.OS === 'web' || isExpoGo) {
+    return null;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('expo-notifications');
+  } catch (err) {
+    console.warn('[Notifications] Could not load expo-notifications:', err);
+    return null;
+  }
+}
+
 // Configure foreground notification behavior: show alert banner + play sound
-if (Platform.OS !== 'web') {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+if (Platform.OS !== 'web' && !isExpoGo) {
+  try {
+    const Notifications = getNotificationsModule();
+    if (Notifications) {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+    }
+  } catch (err) {
+    console.warn('[Notifications] setNotificationHandler skipped:', err);
+  }
 }
 
 /**
@@ -22,7 +48,8 @@ if (Platform.OS !== 'web') {
  * Returns true if granted, false otherwise.
  */
 export async function requestPermissions(): Promise<{ granted: boolean; status: string }> {
-  if (Platform.OS === 'web') {
+  const Notifications = getNotificationsModule();
+  if (!Notifications) {
     return { granted: false, status: 'unsupported' };
   }
 
@@ -49,7 +76,8 @@ export async function requestPermissions(): Promise<{ granted: boolean; status: 
  * Checks current notification permission without prompting.
  */
 export async function checkPermissions(): Promise<{ granted: boolean; status: string }> {
-  if (Platform.OS === 'web') {
+  const Notifications = getNotificationsModule();
+  if (!Notifications) {
     return { granted: false, status: 'unsupported' };
   }
 
@@ -68,12 +96,8 @@ export async function checkPermissions(): Promise<{ granted: boolean; status: st
  * Retrieves the device push token (FCM token for standalone APK, or Expo Push Token for Expo Go).
  */
 export async function getDevicePushToken(): Promise<string | null> {
-  if (Platform.OS === 'web') {
-    return null;
-  }
-
-  if (!Device.isDevice) {
-    console.log('[Notifications] Emulators / Simulators cannot receive push notifications.');
+  const Notifications = getNotificationsModule();
+  if (!Notifications || !Device.isDevice) {
     return null;
   }
 
@@ -85,13 +109,13 @@ export async function getDevicePushToken(): Promise<string | null> {
     }
   } catch (nativeErr) {
     console.log(
-      '[Notifications] Native FCM token not available (likely Expo Go). Falling back to Expo push token:',
+      '[Notifications] Native FCM token not available. Falling back to Expo push token:',
       nativeErr
     );
   }
 
   try {
-    // 2. Fallback to Expo push token (compatible with Expo Go dev client)
+    // 2. Fallback to Expo push token
     const expoToken = await Notifications.getExpoPushTokenAsync();
     return expoToken.data;
   } catch (expoErr) {
@@ -130,27 +154,32 @@ export async function unregisterDeviceFromBackend(deviceId: string): Promise<voi
  * Tapping a notification navigates to the relevant screen (e.g. appointments).
  */
 export function setupNotificationListeners(): () => void {
-  if (Platform.OS === 'web') {
+  const Notifications = getNotificationsModule();
+  if (!Notifications) {
     return () => {};
   }
 
-  // Handle user tapping a notification
-  const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    try {
-      const data = response.notification.request.content.data;
-      console.log('[Notifications] User tapped notification with data:', data);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
+      try {
+        const data = response.notification.request.content.data;
+        console.log('[Notifications] User tapped notification with data:', data);
 
-      if (data && (data['appointment_id'] || data['type'] === 'booking_approved')) {
-        router.push('/(tabs)/appointments');
-      } else if (data && data['booking_request_id']) {
-        router.push('/book-appointment');
+        if (data && (data['appointment_id'] || data['type'] === 'booking_approved')) {
+          router.push('/(tabs)/appointments');
+        } else if (data && data['booking_request_id']) {
+          router.push('/book-appointment');
+        }
+      } catch (err) {
+        console.error('[Notifications] Error navigating from notification tap:', err);
       }
-    } catch (err) {
-      console.error('[Notifications] Error navigating from notification tap:', err);
-    }
-  });
+    });
 
-  return () => {
-    responseSubscription.remove();
-  };
+    return () => {
+      responseSubscription.remove();
+    };
+  } catch {
+    return () => {};
+  }
 }

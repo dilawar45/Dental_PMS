@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { patientApi } from './api';
 
 const STORAGE_KEY = 'dental_pms_patient_auth';
 
@@ -146,8 +145,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearAuth: async () => {
     const current = get();
-    if (current.registeredDeviceId) {
-      patientApi.unregisterDevice(current.registeredDeviceId).catch(() => {});
+    if (current.registeredDeviceId && current.token) {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.100.21:3000';
+      fetch(`${baseUrl}/api/patient/notifications/devices`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${current.token}`,
+        },
+        body: JSON.stringify({ device_id: current.registeredDeviceId }),
+      }).catch(() => {});
     }
     set({ token: null, patient: null, registeredDeviceId: null });
     await persistData({

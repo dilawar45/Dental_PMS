@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, Alert, TouchableOpacity, Platform } from 'react-native';
 import { router } from 'expo-router';
 import {
   LogOut,
@@ -23,16 +23,29 @@ export default function ProfileScreen() {
   const clinic = useAuthStore((s) => s.clinic);
   const clearAuth = useAuthStore((s) => s.clearAuth);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const doLogout = async () => {
+      await clearAuth();
+      router.replace('/(auth)/login');
+    };
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm) {
+        if (window.confirm('Are you sure you want to sign out from your patient account?')) {
+          await doLogout();
+        }
+      } else {
+        await doLogout();
+      }
+      return;
+    }
+
     Alert.alert('Sign Out', 'Are you sure you want to sign out from your patient account?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: async () => {
-          await clearAuth();
-          router.replace('/(auth)/phone');
-        },
+        onPress: doLogout,
       },
     ]);
   };

@@ -132,27 +132,51 @@ export default function HomeScreen() {
             <Text className="text-xs text-slate-400">Loading appointments...</Text>
           </Card>
         ) : nextAppointment ? (
-          <Card className="bg-emerald-700 border-0 p-5 shadow-sm">
-            <View className="flex-row items-center justify-between mb-3">
-              <Badge status={nextAppointment.status} className="bg-emerald-800/80 border-emerald-600 text-emerald-100" />
-              <Text className="text-xs font-medium text-emerald-200">
+          <View
+            style={{
+              backgroundColor: '#047857',
+              borderRadius: 20,
+              padding: 20,
+              shadowColor: '#047857',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View
+                style={{
+                  backgroundColor: '#065f46',
+                  borderColor: '#34d399',
+                  borderWidth: 1,
+                  borderRadius: 999,
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                }}
+              >
+                <Text style={{ color: '#d1fae5', fontSize: 11, fontWeight: '700', textTransform: 'capitalize' }}>
+                  {nextAppointment.status}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#a7f3d0' }}>
                 {nextAppointment.operatory_name || 'Clinic Operatory'}
               </Text>
             </View>
 
-            <Text className="text-lg font-bold text-white mb-1">
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#ffffff', marginBottom: 4 }}>
               {nextAppointment.doctor_name || nextAppointment.dentist_name || 'Dental Consultation'}
             </Text>
 
             {nextAppointment.reason ? (
-              <Text className="text-xs text-emerald-100 mb-3" numberOfLines={1}>
+              <Text style={{ fontSize: 13, color: '#d1fae5', marginBottom: 12 }} numberOfLines={1}>
                 {nextAppointment.reason}
               </Text>
             ) : null}
 
-            <View className="flex-row items-center pt-2.5 border-t border-emerald-600/60">
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(52, 211, 153, 0.3)' }}>
               <Clock color="#a7f3d0" size={15} />
-              <Text className="text-xs text-emerald-50 ml-2 font-semibold">
+              <Text style={{ fontSize: 12, color: '#ecfdf5', marginLeft: 8, fontWeight: '600' }}>
                 {new Date(nextAppointment.start_time).toLocaleDateString(undefined, {
                   weekday: 'short',
                   month: 'short',
@@ -164,7 +188,7 @@ export default function HomeScreen() {
                 })}
               </Text>
             </View>
-          </Card>
+          </View>
         ) : (
           <Card className="p-5 border-dashed border-2 border-slate-200 bg-white">
             <Text className="text-sm font-bold text-slate-800">
