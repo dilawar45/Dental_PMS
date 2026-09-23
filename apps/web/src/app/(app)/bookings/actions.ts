@@ -200,6 +200,37 @@ export async function approveBookingRequestAction(
       throw new Error('Failed to approve booking request');
     }
 
+    // Trigger push notification to patient (non-blocking)
+    const agentUrl = process.env['AGENT_SERVICE_URL'] || 'http://localhost:8000';
+    const dateFormatted = startDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    const timeFormatted = startDate.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    fetch(`${agentUrl}/notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Simulator-Secret': process.env['SIMULATOR_SHARED_SECRET'] || '',
+      },
+      body: JSON.stringify({
+        patient_id: effectivePatientId,
+        title: 'Appointment Confirmed',
+        body: `Your appointment is confirmed for ${dateFormatted} at ${timeFormatted}.`,
+        data: {
+          appointment_id: created.id,
+          type: 'booking_approved',
+        },
+      }),
+    }).catch((err) =>
+      console.error('[PushNotify] Error calling agent /notify on booking approve:', err)
+    );
+
     revalidatePath('/bookings');
     revalidatePath(`/bookings/${bookingRequestId}`);
     revalidatePath('/appointments');
@@ -232,6 +263,8 @@ export async function rejectBookingRequestAction(
   const { bookingRequestId, reason } = parsed.data;
 
   try {
+    let patientIdToNotify: string | null = null;
+
     await withClinic(
       db,
       user.clinicId,
@@ -255,6 +288,8 @@ export async function rejectBookingRequestAction(
             `Cannot reject booking request: current status is already '${request.status}'`
           );
         }
+
+        patientIdToNotify = request.patientId;
 
         await tx
           .update(bookingRequests)
@@ -283,6 +318,29 @@ export async function rejectBookingRequestAction(
         });
       }
     );
+
+    // Trigger push notification to patient (non-blocking)
+    const agentUrl = process.env['AGENT_SERVICE_URL'] || 'http://localhost:8000';
+    if (patientIdToNotify) {
+      fetch(`${agentUrl}/notify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Simulator-Secret': process.env['SIMULATOR_SHARED_SECRET'] || '',
+        },
+        body: JSON.stringify({
+          patient_id: patientIdToNotify,
+          title: 'Booking Update',
+          body: "We couldn't confirm your requested slot. Please try again.",
+          data: {
+            booking_request_id: bookingRequestId,
+            type: 'booking_rejected',
+          },
+        }),
+      }).catch((err) =>
+        console.error('[PushNotify] Error calling agent /notify on booking reject:', err)
+      );
+    }
 
     revalidatePath('/bookings');
     revalidatePath(`/bookings/${bookingRequestId}`);

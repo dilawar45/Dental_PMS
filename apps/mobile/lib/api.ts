@@ -544,4 +544,13 @@ export const patientApi = {
   getReceipt: async (id: string): Promise<ReceiptDetails> => {
     return api.get<ReceiptDetails>(`/api/patient/receipts/${id}`);
   },
+
+  registerDevice: (fcm_token: string, platform: 'android' | 'ios') =>
+    api.post<{ success: boolean; device: { id: string; platform: string; last_seen_at: string } }>(
+      '/api/patient/devices',
+      { fcm_token, platform }
+    ),
+
+  unregisterDevice: (deviceId: string) =>
+    api.delete<{ success: boolean; message?: string }>(`/api/patient/devices/${deviceId}`),
 };

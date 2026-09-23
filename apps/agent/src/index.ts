@@ -9,6 +9,8 @@ import { socialWebhook } from './routes/webhooks/social';
 import { googleWebhook } from './routes/webhooks/google';
 
 import { simulateRoute } from './routes/simulate';
+import { notifyRoute } from './routes/notify';
+import { startReminderScheduler } from './scheduler';
 
 const app = new Hono();
 
@@ -17,6 +19,9 @@ app.route('/', healthRoute);
 
 // Developer testing endpoints
 app.route('/dev', devRoute);
+
+// Push notification endpoint
+app.route('/', notifyRoute);
 
 // Simulator inbound endpoint (auth-gated in production)
 app.route('/', simulateRoute);
@@ -44,6 +49,9 @@ if (process.env['NODE_ENV'] !== 'test' && !process.env['VERCEL']) {
   console.log(`   LLM Provider:  ${config.LLM_PROVIDER}`);
   console.log(`   Session Store: ${config.SESSION_STORE}`);
   serve({ fetch: app.fetch, port });
+
+  // Start appointment reminder scheduler
+  startReminderScheduler();
 }
 
 export { app };

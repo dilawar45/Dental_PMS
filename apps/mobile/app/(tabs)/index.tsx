@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -17,10 +17,22 @@ import { Card } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { useAuthStore } from '../../lib/auth-store';
 import { patientApi } from '../../lib/api';
+import { checkPermissions } from '../../lib/notifications';
 
 export default function HomeScreen() {
   const patient = useAuthStore((s) => s.patient);
   const clinic = useAuthStore((s) => s.clinic);
+  const [showPermissionBanner, setShowPermissionBanner] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      const { granted, status } = await checkPermissions();
+      if (!granted && status === 'denied') {
+        setShowPermissionBanner(true);
+      }
+    })();
+  }, []);
 
   const { data: appointments, isLoading } = useQuery({
     queryKey: ['patient', 'appointments', 'upcoming'],
@@ -62,6 +74,53 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Dismissible Permission Banner */}
+      {showPermissionBanner ? (
+        <View
+          style={{
+            backgroundColor: '#eff6ff',
+            borderColor: '#bfdbfe',
+            borderWidth: 1,
+            borderRadius: 16,
+            padding: 14,
+            marginBottom: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e3a8a' }}>
+              🔔 Enable appointment reminders
+            </Text>
+            <Text style={{ fontSize: 11, color: '#3b82f6', marginTop: 2, lineHeight: 16 }}>
+              Turn on notifications to get booking confirmations and appointment reminders.
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <TouchableOpacity
+              onPress={() => Linking.openSettings()}
+              style={{
+                backgroundColor: '#2563eb',
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '700' }}>
+                Settings
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowPermissionBanner(false)}
+              style={{ padding: 4 }}
+            >
+              <Text style={{ color: '#94a3b8', fontSize: 14, fontWeight: '700' }}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
 
       {/* Next Appointment Card */}
       <View className="mb-6">

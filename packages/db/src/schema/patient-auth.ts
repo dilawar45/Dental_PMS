@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { clinics } from './clinics';
 import { patients } from './patients';
+import { appointments } from './appointments';
 
 /**
  * Patient OTP records for SMS authentication.
@@ -63,6 +64,34 @@ export const patientDevices = pgTable(
     patientFcmTokenUnique: uniqueIndex('patient_devices_patient_fcm_unique').on(
       table.patientId,
       table.fcmToken
+    ),
+  })
+);
+
+/**
+ * Tracks push reminders sent to avoid duplicate 24h or 2h notifications.
+ */
+export const pushRemindersSent = pgTable(
+  'push_reminders_sent',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clinicId: uuid('clinic_id')
+      .notNull()
+      .references(() => clinics.id, { onDelete: 'cascade' }),
+    appointmentId: uuid('appointment_id')
+      .notNull()
+      .references(() => appointments.id, { onDelete: 'cascade' }),
+    reminderType: text('reminder_type').notNull(), // '24h' | '2h'
+    sentAt: timestamp('sent_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueReminder: uniqueIndex('push_reminders_sent_unique').on(
+      table.appointmentId,
+      table.reminderType
+    ),
+    clinicApptIdx: index('push_reminders_sent_clinic_appt_idx').on(
+      table.clinicId,
+      table.appointmentId
     ),
   })
 );

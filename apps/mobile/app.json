@@ -13,7 +13,9 @@
         "backgroundColor": "#059669",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
-      "package": "com.dentalpms.patient"
+      "package": "com.dentalpms.patient",
+      "googleServicesFile": "./google-services.json",
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "VIBRATE"]
     },
     "web": {
       "bundler": "metro",
@@ -22,7 +24,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

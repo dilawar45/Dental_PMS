@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { patientApi } from './api';
 
 const STORAGE_KEY = 'dental_pms_patient_auth';
 
@@ -29,16 +30,19 @@ interface StoredAuthData {
   token: string | null;
   patient: PatientProfile | null;
   clinic: ClinicSelection | null;
+  registeredDeviceId?: string | null;
 }
 
 export interface AuthState {
   token: string | null;
   patient: PatientProfile | null;
   clinic: ClinicSelection | null;
+  registeredDeviceId: string | null;
   isHydrated: boolean;
   setAuth: (payload: { token: string; patient: PatientProfile; clinic?: ClinicSelection }) => Promise<void>;
   setClinic: (clinic: ClinicSelection) => Promise<void>;
   setPatient: (patient: PatientProfile) => Promise<void>;
+  setRegisteredDeviceId: (id: string | null) => Promise<void>;
   clearAuth: () => Promise<void>;
   hydrate: () => Promise<void>;
 }
@@ -93,6 +97,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   patient: null,
   clinic: null,
+  registeredDeviceId: null,
   isHydrated: false,
 
   setAuth: async ({ token, patient, clinic }) => {
@@ -102,6 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       token,
       patient,
       clinic: currentClinic,
+      registeredDeviceId: get().registeredDeviceId,
     });
   },
 
@@ -112,6 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       token: current.token,
       patient: current.patient,
       clinic,
+      registeredDeviceId: current.registeredDeviceId,
     });
   },
 
@@ -122,16 +129,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       token: current.token,
       patient,
       clinic: current.clinic,
+      registeredDeviceId: current.registeredDeviceId,
+    });
+  },
+
+  setRegisteredDeviceId: async (id: string | null) => {
+    const current = get();
+    set({ registeredDeviceId: id });
+    await persistData({
+      token: current.token,
+      patient: current.patient,
+      clinic: current.clinic,
+      registeredDeviceId: id,
     });
   },
 
   clearAuth: async () => {
     const current = get();
-    set({ token: null, patient: null });
+    if (current.registeredDeviceId) {
+      patientApi.unregisterDevice(current.registeredDeviceId).catch(() => {});
+    }
+    set({ token: null, patient: null, registeredDeviceId: null });
     await persistData({
       token: null,
       patient: null,
       clinic: current.clinic,
+      registeredDeviceId: null,
     });
     await removeData();
   },
@@ -144,6 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           token: data.token,
           patient: data.patient,
           clinic: data.clinic,
+          registeredDeviceId: data.registeredDeviceId || null,
           isHydrated: true,
         });
       } else {
