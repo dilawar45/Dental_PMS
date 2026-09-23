@@ -56,11 +56,11 @@ export function DatePickerStrip({
   const dates = React.useMemo(() => generateNextDays(daysCount), [daysCount]);
 
   return (
-    <View className="mb-4">
+    <View style={{ marginBottom: 16 }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 4 }}
+        contentContainerStyle={{ paddingHorizontal: 4, gap: 10 }}
       >
         {dates.map((item) => {
           const isSelected = item.dateString === selectedDate;
@@ -74,11 +74,36 @@ export function DatePickerStrip({
                   ? 'bg-emerald-600 border-emerald-600 shadow-sm'
                   : 'bg-white border-slate-200'
               }`}
+              style={{
+                width: 68,
+                paddingVertical: 12,
+                paddingHorizontal: 4,
+                borderRadius: 16,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 10,
+                borderWidth: 1.5,
+                backgroundColor: isSelected ? '#059669' : '#ffffff',
+                borderColor: isSelected ? '#059669' : '#e2e8f0',
+                shadowColor: isSelected ? '#059669' : '#000000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isSelected ? 0.2 : 0.05,
+                shadowRadius: 4,
+                elevation: isSelected ? 3 : 1,
+              }}
             >
               <Text
                 className={`text-[11px] font-bold uppercase tracking-wider mb-1 ${
                   isSelected ? 'text-emerald-100' : 'text-slate-500'
                 }`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  marginBottom: 4,
+                  color: isSelected ? '#d1fae5' : '#64748b',
+                }}
               >
                 {item.dayLabel}
               </Text>
@@ -86,6 +111,11 @@ export function DatePickerStrip({
                 className={`text-lg font-extrabold ${
                   isSelected ? 'text-white' : 'text-slate-900'
                 }`}
+                style={{
+                  fontSize: 18,
+                  fontWeight: '800',
+                  color: isSelected ? '#ffffff' : '#0f172a',
+                }}
               >
                 {item.dayNumber}
               </Text>
@@ -93,6 +123,12 @@ export function DatePickerStrip({
                 className={`text-[10px] font-medium mt-0.5 ${
                   isSelected ? 'text-emerald-100' : 'text-slate-400'
                 }`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: '600',
+                  marginTop: 2,
+                  color: isSelected ? '#d1fae5' : '#94a3b8',
+                }}
               >
                 {item.monthLabel}
               </Text>

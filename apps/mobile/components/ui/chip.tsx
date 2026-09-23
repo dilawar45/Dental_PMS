@@ -28,14 +28,34 @@ export function Chip({
           className
         )
       )}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderRadius: 12,
+          borderWidth: 1.5,
+          marginRight: 8,
+          marginBottom: 8,
+          backgroundColor: selected ? '#059669' : '#ffffff',
+          borderColor: selected ? '#059669' : '#e2e8f0',
+        },
+        props.style,
+      ]}
       {...props}
     >
-      {icon ? <Text className="mr-1.5">{icon}</Text> : null}
+      {icon ? <Text style={{ marginRight: 6 }}>{icon}</Text> : null}
       <Text
         className={clsx(
           'text-xs font-semibold',
           selected ? 'text-white' : 'text-slate-700'
         )}
+        style={{
+          fontSize: 12,
+          fontWeight: '600',
+          color: selected ? '#ffffff' : '#334155',
+        }}
       >
         {label}
       </Text>

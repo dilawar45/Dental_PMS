@@ -239,18 +239,38 @@ export default function BookAppointmentScreen() {
   return (
     <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 14 }}>
       {/* Top Header */}
-      <View className="flex-row items-center my-3">
+      <View
+        className="flex-row items-center my-3"
+        style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
           className="w-10 h-10 rounded-xl bg-white border border-slate-200 items-center justify-center mr-3"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: '#ffffff',
+            borderWidth: 1,
+            borderColor: '#e2e8f0',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+          }}
         >
           <ArrowLeft color="#1e293b" size={20} />
         </TouchableOpacity>
         <View>
-          <Text className="text-xl font-bold text-slate-900">
+          <Text
+            className="text-xl font-bold text-slate-900"
+            style={{ fontSize: 20, fontWeight: '800', color: '#0f172a' }}
+          >
             Book Appointment
           </Text>
-          <Text className="text-xs text-slate-500">
+          <Text
+            className="text-xs text-slate-500"
+            style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}
+          >
             Bright Smile Dental Care
           </Text>
         </View>
@@ -258,17 +278,35 @@ export default function BookAppointmentScreen() {
 
       {/* Error Banner */}
       {errorMessage ? (
-        <View className="flex-row items-center bg-red-50 border border-red-200 rounded-xl p-3.5 my-3">
+        <View
+          className="flex-row items-center bg-red-50 border border-red-200 rounded-xl p-3.5 my-3"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#fef2f2',
+            borderWidth: 1,
+            borderColor: '#fecaca',
+            borderRadius: 14,
+            padding: 14,
+            marginVertical: 10,
+          }}
+        >
           <AlertCircle color="#dc2626" size={18} />
-          <Text className="text-xs text-red-700 font-medium ml-2 flex-1">
+          <Text
+            className="text-xs text-red-700 font-medium ml-2 flex-1"
+            style={{ fontSize: 12, fontWeight: '600', color: '#b91c1c', marginLeft: 8, flex: 1 }}
+          >
             {errorMessage}
           </Text>
         </View>
       ) : null}
 
       {/* STEP 1: Choose Doctor */}
-      <View className="my-3">
-        <Text className="text-sm font-bold text-slate-900 mb-2">
+      <View className="my-3" style={{ marginVertical: 10 }}>
+        <Text
+          className="text-sm font-bold text-slate-900 mb-2"
+          style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 8 }}
+        >
           Step 1: Choose Specialist
         </Text>
         {isLoadingDoctors ? (
@@ -292,8 +330,11 @@ export default function BookAppointmentScreen() {
       </View>
 
       {/* STEP 2: Choose Date */}
-      <View className="my-3">
-        <Text className="text-sm font-bold text-slate-900 mb-2">
+      <View className="my-3" style={{ marginVertical: 10 }}>
+        <Text
+          className="text-sm font-bold text-slate-900 mb-2"
+          style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 8 }}
+        >
           Step 2: Select Date
         </Text>
         <DatePickerStrip
@@ -306,8 +347,11 @@ export default function BookAppointmentScreen() {
       </View>
 
       {/* STEP 3: Choose Time Slot */}
-      <View className="my-3">
-        <Text className="text-sm font-bold text-slate-900 mb-2">
+      <View className="my-3" style={{ marginVertical: 10 }}>
+        <Text
+          className="text-sm font-bold text-slate-900 mb-2"
+          style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 8 }}
+        >
           Step 3: Select Time Slot
         </Text>
         <SlotGrid
@@ -322,13 +366,19 @@ export default function BookAppointmentScreen() {
       </View>
 
       {/* STEP 4: Reason & Notes */}
-      <View className="my-3">
-        <Text className="text-sm font-bold text-slate-900 mb-2">
+      <View className="my-3" style={{ marginVertical: 10 }}>
+        <Text
+          className="text-sm font-bold text-slate-900 mb-2"
+          style={{ fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 8 }}
+        >
           Step 4: Reason for Visit
         </Text>
 
         {/* Quick-Pick Chips */}
-        <View className="flex-row flex-wrap mb-2">
+        <View
+          className="flex-row flex-wrap mb-2"
+          style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}
+        >
           {QUICK_REASONS.map((r) => (
             <Chip
               key={r}
@@ -359,20 +409,28 @@ export default function BookAppointmentScreen() {
           onChangeText={setNotes}
           multiline
           numberOfLines={3}
-          className="h-20 text-top"
+          style={{ height: 72, textAlignVertical: 'top' }}
         />
       </View>
 
       {/* Submit Button */}
-      <View className="my-6 pb-6">
+      <View className="my-6 pb-6" style={{ marginTop: 24, paddingBottom: 32 }}>
         <Button
           title={bookingMutation.isPending ? 'Submitting Request...' : 'Request Appointment'}
           onPress={handleSubmit}
           loading={bookingMutation.isPending}
           disabled={!selectedDoctorId || !selectedSlot || reason.trim().length < 3}
           size="lg"
+          style={{
+            backgroundColor: !selectedDoctorId || !selectedSlot || reason.trim().length < 3 ? '#94a3b8' : '#059669',
+            borderRadius: 16,
+            paddingVertical: 16,
+          }}
         />
-        <Text className="text-[11px] text-center text-slate-400 mt-2">
+        <Text
+          className="text-[11px] text-center text-slate-400 mt-2"
+          style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}
+        >
           Appointments are confirmed directly by clinic staff.
         </Text>
       </View>

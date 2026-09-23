@@ -69,11 +69,11 @@ export function Badge({
     }
   }
 
-  const variantStyles = {
-    primary: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-    secondary: 'bg-slate-100 border-slate-200 text-slate-700',
-    outline: 'border-slate-300 bg-white text-slate-700',
-    slate: 'bg-slate-50 border-slate-200 text-slate-600',
+  const variantFallbacks = {
+    primary: { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46' },
+    secondary: { bg: '#f1f5f9', border: '#e2e8f0', text: '#334155' },
+    outline: { bg: '#ffffff', border: '#cbd5e1', text: '#334155' },
+    slate: { bg: '#f8fafc', border: '#e2e8f0', text: '#475569' },
   }[variant || 'primary'];
 
   return (
@@ -81,16 +81,34 @@ export function Badge({
       className={twMerge(
         clsx(
           'flex-row items-center px-2.5 py-0.5 rounded-full border',
-          variantStyles,
           className
         )
       )}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 10,
+          paddingVertical: 3,
+          borderRadius: 999,
+          borderWidth: 1,
+          backgroundColor: variantFallbacks.bg,
+          borderColor: variantFallbacks.border,
+        },
+        props.style,
+      ]}
       {...props}
     >
       {typeof children === 'string' ? (
-        <Text className="text-xs font-semibold">{children}</Text>
+        <Text style={{ fontSize: 11, fontWeight: '700', color: variantFallbacks.text }}>
+          {children}
+        </Text>
+      ) : label ? (
+        <Text style={{ fontSize: 11, fontWeight: '700', color: variantFallbacks.text }}>
+          {label}
+        </Text>
       ) : (
-        children || (label ? <Text className="text-xs font-semibold">{label}</Text> : null)
+        children
       )}
     </View>
   );

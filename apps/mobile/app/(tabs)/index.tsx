@@ -56,20 +56,56 @@ export default function HomeScreen() {
   return (
     <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 12 }}>
       {/* Header */}
-      <View className="flex-row items-center justify-between mt-2 mb-6">
-        <View>
-          <Text className="text-xs font-bold text-emerald-700 tracking-wider uppercase">
+      <View
+        className="flex-row items-center justify-between mt-2 mb-6"
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 8,
+          marginBottom: 20,
+        }}
+      >
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <Text
+            className="text-xs font-bold text-emerald-700 tracking-wider uppercase"
+            style={{
+              fontSize: 12,
+              fontWeight: '700',
+              color: '#047857',
+              letterSpacing: 0.8,
+              textTransform: 'uppercase',
+            }}
+          >
             {clinic?.name || 'Bright Smile Dental'}
           </Text>
-          <Text className="text-2xl font-extrabold text-slate-900 mt-0.5">
+          <Text
+            className="text-2xl font-extrabold text-slate-900 mt-0.5"
+            style={{
+              fontSize: 24,
+              fontWeight: '800',
+              color: '#0f172a',
+              marginTop: 2,
+            }}
+          >
             Hello, {patient?.first_name || 'Patient'} 👋
           </Text>
         </View>
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/profile')}
           className="w-11 h-11 bg-emerald-100 rounded-full items-center justify-center border border-emerald-200"
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: '#d1fae5',
+            borderWidth: 1.5,
+            borderColor: '#a7f3d0',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          <Text className="text-base font-bold text-emerald-800">
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#065f46' }}>
             {patient?.first_name ? patient.first_name[0] : 'P'}
           </Text>
         </TouchableOpacity>
@@ -210,25 +246,52 @@ export default function HomeScreen() {
       </View>
 
       {/* Quick Actions Grid */}
-      <View className="mb-6">
-        <Text className="text-sm font-bold text-slate-900 mb-3">
+      <View className="mb-6" style={{ marginBottom: 24 }}>
+        <Text
+          className="text-sm font-bold text-slate-900 mb-3"
+          style={{ fontSize: 15, fontWeight: '800', color: '#0f172a', marginBottom: 12 }}
+        >
           Quick Actions
         </Text>
-        <View className="flex-row flex-wrap justify-between">
+        <View
+          className="flex-row flex-wrap justify-between"
+          style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}
+        >
           {/* Chat with AI Receptionist (Phase E Placeholder) */}
           <TouchableOpacity
             onPress={handleChatPress}
             activeOpacity={0.8}
             className="w-[48%] mb-3"
+            style={{ width: '48%', marginBottom: 12 }}
           >
-            <Card className="p-4 bg-emerald-50/60 border-emerald-200/80">
-              <View className="w-10 h-10 rounded-xl bg-emerald-600 items-center justify-center mb-2.5">
+            <Card
+              className="p-4 bg-emerald-50/60 border-emerald-200/80"
+              style={{
+                padding: 16,
+                backgroundColor: '#f0fdf4',
+                borderWidth: 1.5,
+                borderColor: '#bbf7d0',
+                borderRadius: 18,
+              }}
+            >
+              <View
+                className="w-10 h-10 rounded-xl bg-emerald-600 items-center justify-center mb-2.5"
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 14,
+                  backgroundColor: '#059669',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                }}
+              >
                 <MessageSquare color="#ffffff" size={20} />
               </View>
-              <Text className="text-sm font-bold text-slate-900">
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a' }}>
                 AI Receptionist
               </Text>
-              <Text className="text-[11px] text-slate-500 mt-0.5">
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                 24/7 instant chat
               </Text>
             </Card>
@@ -239,15 +302,36 @@ export default function HomeScreen() {
             onPress={handleBookPress}
             activeOpacity={0.8}
             className="w-[48%] mb-3"
+            style={{ width: '48%', marginBottom: 12 }}
           >
-            <Card className="p-4">
-              <View className="w-10 h-10 rounded-xl bg-slate-100 items-center justify-center mb-2.5">
+            <Card
+              className="p-4"
+              style={{
+                padding: 16,
+                backgroundColor: '#ffffff',
+                borderWidth: 1,
+                borderColor: '#e2e8f0',
+                borderRadius: 18,
+              }}
+            >
+              <View
+                className="w-10 h-10 rounded-xl bg-slate-100 items-center justify-center mb-2.5"
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 14,
+                  backgroundColor: '#ecfdf5',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                }}
+              >
                 <CalendarPlus color="#059669" size={20} />
               </View>
-              <Text className="text-sm font-bold text-slate-900">
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a' }}>
                 Book Visit
               </Text>
-              <Text className="text-[11px] text-slate-500 mt-0.5">
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                 Doctor & time slot
               </Text>
             </Card>
@@ -258,15 +342,36 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/doctors')}
             activeOpacity={0.8}
             className="w-[48%] mb-3"
+            style={{ width: '48%', marginBottom: 12 }}
           >
-            <Card className="p-4">
-              <View className="w-10 h-10 rounded-xl bg-slate-100 items-center justify-center mb-2.5">
+            <Card
+              className="p-4"
+              style={{
+                padding: 16,
+                backgroundColor: '#ffffff',
+                borderWidth: 1,
+                borderColor: '#e2e8f0',
+                borderRadius: 18,
+              }}
+            >
+              <View
+                className="w-10 h-10 rounded-xl bg-slate-100 items-center justify-center mb-2.5"
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 14,
+                  backgroundColor: '#f1f5f9',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                }}
+              >
                 <Users color="#059669" size={20} />
               </View>
-              <Text className="text-sm font-bold text-slate-900">
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a' }}>
                 Our Dentists
               </Text>
-              <Text className="text-[11px] text-slate-500 mt-0.5">
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                 Specialists & fees
               </Text>
             </Card>
@@ -277,15 +382,36 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/appointments')}
             activeOpacity={0.8}
             className="w-[48%] mb-3"
+            style={{ width: '48%', marginBottom: 12 }}
           >
-            <Card className="p-4">
-              <View className="w-10 h-10 rounded-xl bg-slate-100 items-center justify-center mb-2.5">
+            <Card
+              className="p-4"
+              style={{
+                padding: 16,
+                backgroundColor: '#ffffff',
+                borderWidth: 1,
+                borderColor: '#e2e8f0',
+                borderRadius: 18,
+              }}
+            >
+              <View
+                className="w-10 h-10 rounded-xl bg-slate-100 items-center justify-center mb-2.5"
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 14,
+                  backgroundColor: '#f1f5f9',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                }}
+              >
                 <CalendarCheck2 color="#059669" size={20} />
               </View>
-              <Text className="text-sm font-bold text-slate-900">
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#0f172a' }}>
                 Appointments
               </Text>
-              <Text className="text-[11px] text-slate-500 mt-0.5">
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
                 History & status
               </Text>
             </Card>
@@ -294,19 +420,38 @@ export default function HomeScreen() {
       </View>
 
       {/* Clinic Contact Info */}
-      <Card className="p-4 mb-8 bg-slate-100/70 border-slate-200">
-        <Text className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+      <Card
+        className="p-4 mb-8 bg-slate-100/70 border-slate-200"
+        style={{
+          padding: 16,
+          backgroundColor: '#f8fafc',
+          borderWidth: 1,
+          borderColor: '#e2e8f0',
+          borderRadius: 18,
+          marginBottom: 32,
+        }}
+      >
+        <Text
+          className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2"
+          style={{ fontSize: 11, fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 }}
+        >
           Clinic Details
         </Text>
-        <View className="flex-row items-center mb-1.5">
+        <View
+          className="flex-row items-center mb-1.5"
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}
+        >
           <MapPin color="#64748b" size={15} />
-          <Text className="text-xs text-slate-600 ml-2">
+          <Text style={{ fontSize: 12, color: '#475569', marginLeft: 8 }}>
             123 Medical Center Blvd, Suite 400
           </Text>
         </View>
-        <View className="flex-row items-center">
+        <View
+          className="flex-row items-center"
+          style={{ flexDirection: 'row', alignItems: 'center' }}
+        >
           <Phone color="#64748b" size={15} />
-          <Text className="text-xs text-slate-600 ml-2">
+          <Text style={{ fontSize: 12, color: '#475569', marginLeft: 8 }}>
             +92 300 1234567 • Mon – Sat 09:00–19:00
           </Text>
         </View>
