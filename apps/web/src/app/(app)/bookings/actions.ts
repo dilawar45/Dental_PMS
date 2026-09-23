@@ -219,7 +219,7 @@ export async function approveBookingRequestAction(
         'X-Simulator-Secret': process.env['SIMULATOR_SHARED_SECRET'] || '',
       },
       body: JSON.stringify({
-        patient_id: effectivePatientId,
+        patient_id: created.patientId,
         title: 'Appointment Confirmed',
         body: `Your appointment is confirmed for ${dateFormatted} at ${timeFormatted}.`,
         data: {

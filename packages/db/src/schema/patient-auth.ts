@@ -95,3 +95,33 @@ export const pushRemindersSent = pgTable(
     ),
   })
 );
+
+/**
+ * Patient password reset requests.
+ * Uses token_hash (SHA-256) with 30-min TTL.
+ */
+export const patientPasswordResets = pgTable(
+  'patient_password_resets',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    patientId: uuid('patient_id')
+      .notNull()
+      .references(() => patients.id, { onDelete: 'cascade' }),
+    clinicId: uuid('clinic_id')
+      .notNull()
+      .references(() => clinics.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    ip: inet('ip'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    patientConsumedIdx: index('patient_password_resets_patient_consumed_idx').on(
+      table.patientId,
+      table.consumedAt
+    ),
+    tokenHashIdx: index('patient_password_resets_token_hash_idx').on(table.tokenHash),
+  })
+);
+

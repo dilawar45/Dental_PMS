@@ -1,5 +1,4 @@
-import { POST as sendOtp } from '../src/app/api/patient/auth/send-otp/route';
-import { POST as verifyOtp } from '../src/app/api/patient/auth/verify-otp/route';
+import { POST as login } from '../src/app/api/patient/auth/login/route';
 import { GET as getMe } from '../src/app/api/patient/me/route';
 import { GET as getDoctors } from '../src/app/api/patient/doctors/route';
 import { GET as getAvailability } from '../src/app/api/patient/availability/route';
@@ -12,7 +11,6 @@ import { eq } from 'drizzle-orm';
 async function run() {
   const db = getDefaultDb();
 
-  // Pick an existing seeded patient from the seeded clinic
   const targetClinicId = 'b398700a-f746-4a45-afc0-b1020cda02a8';
   let [patient] = await db
     .select()
@@ -28,48 +26,29 @@ async function run() {
     process.exit(1);
   }
 
-  const phone = patient.phone;
+  const email = patient.email || 'muhammad@brightsmile.com';
   const clinicId = patient.clinicId;
 
   console.log('=== DEMO CURL EXECUTION START ===\n');
 
-  // 1. send-otp
-  console.log('1. POST /api/patient/auth/send-otp');
-  console.log(`curl -X POST http://localhost:3000/api/patient/auth/send-otp \\`);
+  // 1. login
+  console.log('1. POST /api/patient/auth/login');
+  console.log(`curl -X POST http://localhost:3000/api/patient/auth/login \\`);
   console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"phone": "${phone}", "clinic_id": "${clinicId}"}'`);
+  console.log(`  -d '{"email": "${email}", "password": "DevPassword123!", "clinic_id": "${clinicId}"}'`);
 
-  const req1 = new Request('http://localhost:3000/api/patient/auth/send-otp', {
+  const req1 = new Request('http://localhost:3000/api/patient/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, clinic_id: clinicId }),
+    body: JSON.stringify({ email, password: 'DevPassword123!', clinic_id: clinicId }),
   });
-  const res1 = await sendOtp(req1);
+  const res1 = await login(req1);
   const data1 = await res1.json();
   console.log('HTTP Status:', res1.status);
   console.log('Response:', JSON.stringify(data1, null, 2));
   console.log('\n----------------------------------------\n');
 
-  const devCode = data1.dev_code || '123456';
-
-  // 2. verify-otp
-  console.log('2. POST /api/patient/auth/verify-otp');
-  console.log(`curl -X POST http://localhost:3000/api/patient/auth/verify-otp \\`);
-  console.log(`  -H "Content-Type: application/json" \\`);
-  console.log(`  -d '{"phone": "${phone}", "code": "${devCode}", "clinic_id": "${clinicId}"}'`);
-
-  const req2 = new Request('http://localhost:3000/api/patient/auth/verify-otp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, code: devCode, clinic_id: clinicId }),
-  });
-  const res2 = await verifyOtp(req2);
-  const data2 = await res2.json();
-  console.log('HTTP Status:', res2.status);
-  console.log('Response:', JSON.stringify(data2, null, 2));
-  console.log('\n----------------------------------------\n');
-
-  const token = data2.token;
+  const token = data1.token;
 
   // 3. GET /me
   console.log('3. GET /api/patient/me');

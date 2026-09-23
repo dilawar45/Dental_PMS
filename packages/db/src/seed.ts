@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import bcrypt from 'bcryptjs';
 import { createDb } from './index';
 import {
   clinics,
@@ -282,22 +283,44 @@ async function main() {
     { name: 'Sarah Khan', phone: '+923001234530', gender: 'female', dob: '1992-08-01', address: 'Wapda Town Phase 2, Block D, Lahore' },
   ];
 
+  const defaultPatientPasswordHash = bcrypt.hashSync('DevPassword123!', 10);
+
   const seededPatients = await db
     .insert(patients)
     .values(
-      pakistaniPatientsData.map((p) => ({
-        clinicId,
-        fullName: p.name,
-        phone: p.phone,
-        email: `${p.name.toLowerCase().replace(/\s+/g, '.')}@example.pk`,
-        dob: p.dob,
-        gender: p.gender,
-        address: p.address,
-        notes: 'Routine dental consultation record',
-      }))
+      pakistaniPatientsData.map((p, idx) => {
+        const firstName = p.name.split(' ')[0]!.toLowerCase();
+        const isMuhammadUsman = p.phone === '+923001234501';
+
+        const email = isMuhammadUsman
+          ? 'muhammad@brightsmile.com'
+          : `${firstName}@brightsmile.com`;
+
+        const cnic = isMuhammadUsman
+          ? '35202-1234567-1'
+          : `3520${(idx % 9) + 1}-${String(1000000 + (idx + 1) * 23456).slice(0, 7)}-1`;
+
+        const birthYear = parseInt(p.dob.split('-')[0]!, 10);
+        const age = isMuhammadUsman ? 36 : Math.max(1, new Date().getFullYear() - birthYear);
+
+        return {
+          clinicId,
+          fullName: p.name,
+          phone: p.phone,
+          email,
+          passwordHash: defaultPatientPasswordHash,
+          cnic,
+          age,
+          dob: p.dob,
+          gender: p.gender,
+          address: p.address,
+          notes: 'Routine dental consultation record',
+        };
+      })
     )
     .returning();
-  console.log(`    ✅ Inserted ${seededPatients.length} patients`);
+  console.log(`    ✅ Inserted ${seededPatients.length} patients with email/password auth`);
+
 
   // 4. Consents (100% data_processing, ~70% reminders, ~40% marketing)
   console.log('  [5/9] Generating patient compliance consents...');
@@ -765,10 +788,11 @@ async function main() {
   console.log(`  - Charting Entries: ${seededChartingEntries.length} across 10 patients`);
   console.log('======================================================\n');
 
-  console.log('📋 SAMPLE PATIENT ROWS (First 3):');
-  seededPatients.slice(0, 3).forEach((p, i) => {
-    console.log(`  ${i + 1}. [${p.id}] ${p.fullName} | Phone: ${p.phone} | DOB: ${p.dob} | Gender: ${p.gender} | Address: ${p.address}`);
+  console.log('📋 DEMO PATIENT LOGINS (Password: DevPassword123!):');
+  seededPatients.slice(0, 5).forEach((p, i) => {
+    console.log(`  ${i + 1}. ${p.fullName} -> Email: ${p.email} | CNIC: ${p.cnic} | Phone: ${p.phone} | Age: ${p.age}`);
   });
+
 
   process.exit(0);
 }

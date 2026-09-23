@@ -53,7 +53,7 @@ export async function apiClient<T>(
 
   if (response.status === 401 && !skipAuth) {
     await useAuthStore.getState().clearAuth();
-    router.replace('/(auth)/phone');
+    router.replace('/(auth)/login');
     throw new ApiError(401, 'Unauthorized - Session expired');
   }
 
@@ -104,17 +104,46 @@ export const api = {
 // Patient Specific Types & Endpoints
 // =========================================================
 
-export interface SendOtpResponse {
-  message: string;
-  dev_code?: string;
-  is_new_patient?: boolean;
+export interface RegisterPatientInput {
+  full_name: string;
+  cnic: string;
+  phone: string;
+  age: number;
+  gender: 'male' | 'female' | 'other';
+  email: string;
+  password: string;
+  clinic_id: string;
 }
 
-export interface VerifyOtpResponse {
-  token: string;
-  patient: PatientProfile;
-  is_new: boolean;
+export interface LoginPatientInput {
+  email: string;
+  password: string;
+  clinic_id: string;
 }
+
+export interface AuthPatientResponse {
+  token: string;
+  patient: {
+    id: string;
+    full_name: string;
+    phone: string;
+    email: string;
+  };
+}
+
+export interface ForgotPasswordInput {
+  cnic: string;
+  phone: string;
+  clinic_id: string;
+}
+
+export interface ResetPasswordInput {
+  cnic: string;
+  phone: string;
+  new_password: string;
+  clinic_id: string;
+}
+
 
 export interface Doctor {
   id: string;
@@ -336,24 +365,18 @@ export function formatToothFdi(fdi: string | null | undefined): string {
 }
 
 export const patientApi = {
-  sendOtp: (phone: string, clinicId: string) =>
-    api.post<SendOtpResponse>(
-      '/api/patient/auth/send-otp',
-      { phone, clinic_id: clinicId },
-      { skipAuth: true }
-    ),
+  register: (data: RegisterPatientInput) =>
+    api.post<AuthPatientResponse>('/api/patient/auth/register', data, { skipAuth: true }),
 
-  verifyOtp: (
-    phone: string,
-    code: string,
-    clinicId: string,
-    profile?: { first_name: string; last_name: string }
-  ) =>
-    api.post<VerifyOtpResponse>(
-      '/api/patient/auth/verify-otp',
-      { phone, code, clinic_id: clinicId, profile },
-      { skipAuth: true }
-    ),
+  login: (data: LoginPatientInput) =>
+    api.post<AuthPatientResponse>('/api/patient/auth/login', data, { skipAuth: true }),
+
+  forgotPassword: (data: ForgotPasswordInput) =>
+    api.post<{ success: boolean }>('/api/patient/auth/forgot-password', data, { skipAuth: true }),
+
+  resetPassword: (data: ResetPasswordInput) =>
+    api.post<{ success: boolean }>('/api/patient/auth/reset-password', data, { skipAuth: true }),
+
 
   getDoctors: async (): Promise<Doctor[]> => {
     const res = await api.get<{ doctors?: Doctor[] } | Doctor[]>('/api/patient/doctors');

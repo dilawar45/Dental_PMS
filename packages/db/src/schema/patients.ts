@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, text, date, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, date, integer, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clinics } from './clinics';
 
 /**
@@ -18,6 +19,9 @@ export const patients = pgTable(
     email: varchar('email', { length: 255 }),
     dob: date('dob'),
     gender: varchar('gender', { length: 50 }),
+    cnic: text('cnic'),
+    passwordHash: text('password_hash'),
+    age: integer('age'),
     address: text('address'),
     notes: text('notes'),
     expoPushToken: text('expo_push_token'),
@@ -31,5 +35,12 @@ export const patients = pgTable(
     clinicIdIdx: index('patients_clinic_id_idx').on(table.clinicId),
     clinicPhoneIdx: index('patients_clinic_id_phone_idx').on(table.clinicId, table.phone),
     clinicFullNameIdx: index('patients_clinic_id_full_name_idx').on(table.clinicId, table.fullName),
+    clinicCnicUnique: uniqueIndex('patients_clinic_cnic_unique')
+      .on(table.clinicId, table.cnic)
+      .where(sql`"cnic" IS NOT NULL`),
+    clinicLowerEmailUnique: uniqueIndex('patients_clinic_lower_email_unique')
+      .on(table.clinicId, sql`LOWER("email")`)
+      .where(sql`"email" IS NOT NULL`),
   })
 );
+
