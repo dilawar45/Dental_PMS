@@ -48,22 +48,48 @@ export function ChartMini({ teeth }: ChartMiniProps) {
         }
         activeOpacity={0.7}
         className="items-center mx-1 my-1"
+        style={{
+          marginHorizontal: 3,
+          marginVertical: 4,
+          alignItems: 'center',
+        }}
       >
         <View
           className="w-10 h-11 rounded-xl items-center justify-center border shadow-xs transition-all"
           style={{
+            width: 38,
+            height: 46,
+            borderRadius: 10,
+            borderWidth: 1.5,
+            alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: isTreatedOrAffected ? `${meta.hex}15` : '#f8fafc',
             borderColor: isTreatedOrAffected ? meta.hex : '#e2e8f0',
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.04,
+            shadowRadius: 2,
+            elevation: 1,
           }}
         >
           {/* Status colored dot */}
           <View
             className="w-2.5 h-2.5 rounded-full mb-1"
-            style={{ backgroundColor: meta.hex }}
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: 9999,
+              marginBottom: 4,
+              backgroundColor: meta.hex,
+            }}
           />
           <Text
             className="text-[11px] font-bold"
-            style={{ color: isTreatedOrAffected ? meta.hex : '#334155' }}
+            style={{
+              fontSize: 11,
+              fontWeight: '700',
+              color: isTreatedOrAffected ? meta.hex : '#334155',
+            }}
           >
             {fdi}
           </Text>

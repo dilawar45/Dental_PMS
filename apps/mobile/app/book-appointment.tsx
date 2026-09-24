@@ -379,17 +379,39 @@ export default function BookAppointmentScreen() {
           className="flex-row flex-wrap mb-2"
           style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}
         >
-          {QUICK_REASONS.map((r) => (
-            <Chip
-              key={r}
-              label={r}
-              selected={reason === r}
-              onPress={() => {
-                setReason(r);
-                setErrorMessage(null);
-              }}
-            />
-          ))}
+          {QUICK_REASONS.map((r) => {
+            const selectedReasons = reason
+              .split(',')
+              .map((s) => s.trim().toLowerCase())
+              .filter(Boolean);
+            const isSelected = selectedReasons.includes(r.toLowerCase());
+
+            return (
+              <Chip
+                key={r}
+                label={r}
+                selected={isSelected}
+                onPress={() => {
+                  const currentList = reason
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  const existingIndex = currentList.findIndex(
+                    (item) => item.toLowerCase() === r.toLowerCase()
+                  );
+
+                  if (existingIndex >= 0) {
+                    currentList.splice(existingIndex, 1);
+                  } else {
+                    currentList.push(r);
+                  }
+
+                  setReason(currentList.join(', '));
+                  if (errorMessage) setErrorMessage(null);
+                }}
+              />
+            );
+          })}
         </View>
 
         <Input
@@ -399,7 +421,7 @@ export default function BookAppointmentScreen() {
             setReason(text);
             if (errorMessage) setErrorMessage(null);
           }}
-          helperText="Required (minimum 3 characters)"
+          helperText="Select one or more options above or type custom reason (min 3 chars)"
         />
 
         <Input
