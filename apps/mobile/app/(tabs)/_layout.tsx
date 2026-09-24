@@ -6,7 +6,7 @@ import { Home, Stethoscope, Calendar, FileText, User } from 'lucide-react-native
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'android' ? 14 : 10);
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 12);
   const tabHeight = 60 + bottomInset;
 
   return (
@@ -22,15 +22,19 @@ export default function TabsLayout() {
           height: tabHeight,
           paddingBottom: bottomInset,
           paddingTop: 8,
-          elevation: 10,
+          elevation: 12,
           shadowColor: '#000000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 4,
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.08,
+          shadowRadius: 5,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: 2,
         },
       }}
     >

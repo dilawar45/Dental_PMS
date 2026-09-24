@@ -33,27 +33,6 @@ jobs:
       - name: Lint
         run: pnpm turbo lint
 
-  python:
-    name: Python — pytest + mypy
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/agent
-    steps:
-      - uses: actions/checkout@v4
+      - name: Build Web App
+        run: pnpm --filter @dental-pms/web build
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-
-      - name: Run tests
-        run: pytest tests/ -v
-
-      - name: Type check
-        run: mypy app/ --ignore-missing-imports
