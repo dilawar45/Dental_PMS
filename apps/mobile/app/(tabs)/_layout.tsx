@@ -1,9 +1,14 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Stethoscope, Calendar, FileText, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = insets.bottom > 0 ? insets.bottom : (Platform.OS === 'android' ? 14 : 10);
+  const tabHeight = 60 + bottomInset;
+
   return (
     <Tabs
       screenOptions={{
@@ -14,9 +19,14 @@ export default function TabsLayout() {
           backgroundColor: '#ffffff',
           borderTopColor: '#f1f5f9',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          height: tabHeight,
+          paddingBottom: bottomInset,
           paddingTop: 8,
+          elevation: 10,
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 4,
         },
         tabBarLabelStyle: {
           fontSize: 11,

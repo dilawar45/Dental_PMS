@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     const now = new Date();
 
     const appointmentList = await withClinic(auth.clinic_id, async (tx) => {
-      let conditions = [
+      const conditions = [
         eq(appointments.clinicId, auth.clinic_id),
         eq(appointments.patientId, auth.patient_id),
       ];

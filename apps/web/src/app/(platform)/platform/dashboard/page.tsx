@@ -220,7 +220,7 @@ export default async function PlatformDashboardPage() {
 
             {data.clinics.length === 0 && (
               <div className="p-8 text-center text-sm text-slate-500">
-                No clinics provisioned yet. Click "Create New Clinic" to start.
+                No clinics provisioned yet. Click &quot;Create New Clinic&quot; to start.
               </div>
             )}
           </div>

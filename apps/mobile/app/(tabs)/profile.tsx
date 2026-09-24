@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 14 }}>
+    <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 14, paddingBottom: 40 }}>
       <View className="my-4" style={{ marginVertical: 16 }}>
         <Text
           className="text-2xl font-extrabold text-slate-900"

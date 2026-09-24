@@ -54,7 +54,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 12 }}>
+    <Screen scroll contentContainerStyle={{ padding: 18, paddingTop: 12, paddingBottom: 40 }}>
       {/* Header */}
       <View
         className="flex-row items-center justify-between mt-2 mb-6"
