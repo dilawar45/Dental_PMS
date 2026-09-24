@@ -302,12 +302,6 @@ importers:
       react-native-css-interop:
         specifier: ^0.1.22
         version: 0.1.22(0d74a74e1d4b02d25d1182e2071b2bf6)
-      react-native-gesture-handler:
-        specifier: ~2.32.0
-        version: 2.32.0(react-native@0.86.3(@babel/core@7.29.7(supports-color@7.2.0))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@7.2.0))(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.3)(supports-color@7.2.0))(react@19.2.3)
-      react-native-reanimated:
-        specifier: 4.5.1
-        version: 4.5.1(react-native-worklets@0.10.4(@babel/core@7.29.7(supports-color@7.2.0))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@7.2.0))(supports-color@7.2.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@7.2.0))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@7.2.0))(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.3)(supports-color@7.2.0))(react@19.2.3)(supports-color@7.2.0))(react-native@0.86.3(@babel/core@7.29.7(supports-color@7.2.0))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@7.2.0))(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.3)(supports-color@7.2.0))(react@19.2.3)
       react-native-safe-area-context:
         specifier: ~5.7.0
         version: 5.7.0(react-native@0.86.3(@babel/core@7.29.7(supports-color@7.2.0))(@react-native/metro-config@0.87.1(@babel/core@7.29.7(supports-color@7.2.0))(supports-color@7.2.0))(@types/react@19.2.18)(react@19.2.3)(supports-color@7.2.0))(react@19.2.3)
@@ -6647,7 +6641,7 @@ packages:
 
   serialize-error-cjs@0.1.4:
     resolution: {integrity: sha512-6a6dNqipzbCPlTFgztfNP2oG+IGcflMe/01zSzGrQcxGMKbIjOemBBD85pH92klWaJavAUWxAh9Z0aU28zxW6A==}
-    deprecated: Rolling release, please update to 0.2.0
+    deprecated: Rolling release, please update to 0.3.0
 
   serialize-error@2.1.0:
     resolution: {integrity: sha512-ghgmKt5o4Tly5yEG/UJp8qTd0AN7Xalw4XBtDEKP655B699qMEtra1WlXeE6WIvdEG481JvRxULKsInq/iNysw==}
@@ -10294,7 +10288,7 @@ snapshots:
 
   '@types/react-test-renderer@19.3.0':
     dependencies:
-      '@types/react': 18.3.31
+      '@types/react': 19.2.18
 
   '@types/react@18.3.31':
     dependencies:
@@ -12143,7 +12137,7 @@ snapshots:
 
   gcp-metadata@8.1.2(supports-color@7.2.0):
     dependencies:
-      gaxios: 7.1.3(supports-color@7.2.0)
+      gaxios: 7.3.1(supports-color@7.2.0)
       google-logging-utils: 1.1.3
       json-bigint: 1.0.0
     transitivePeerDependencies:
@@ -12159,7 +12153,7 @@ snapshots:
 
   gcp-metadata@9.0.4(supports-color@7.2.0):
     dependencies:
-      gaxios: 7.1.3(supports-color@7.2.0)
+      gaxios: 7.3.1(supports-color@7.2.0)
       google-logging-utils: 2.0.1
       json-bigint: 1.0.0
     transitivePeerDependencies:
@@ -12260,7 +12254,7 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
       ecdsa-sig-formatter: 1.0.11
-      gaxios: 7.1.3(supports-color@7.2.0)
+      gaxios: 7.3.1(supports-color@7.2.0)
       gcp-metadata: 8.1.4(supports-color@7.2.0)
       google-logging-utils: 1.1.3
       gtoken: 8.0.0(supports-color@7.2.0)
@@ -12364,7 +12358,7 @@ snapshots:
 
   gtoken@8.0.0(supports-color@7.2.0):
     dependencies:
-      gaxios: 7.1.3(supports-color@7.2.0)
+      gaxios: 7.3.1(supports-color@7.2.0)
       jws: 4.0.1
     transitivePeerDependencies:
       - supports-color
