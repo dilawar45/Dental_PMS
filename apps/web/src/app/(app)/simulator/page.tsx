@@ -49,7 +49,7 @@ export default async function SimulatorPage() {
   const defaultClinicId = process.env['DEFAULT_CLINIC_ID'] || clinicId;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] p-4 md:p-6 max-w-7xl mx-auto w-full gap-4">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] p-4 md:p-6 max-w-7xl mx-auto w-full gap-5 pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
