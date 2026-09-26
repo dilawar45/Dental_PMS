@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, boolean, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, boolean, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { clinics } from './clinics';
 import { userRoleEnum } from './enums';
 
@@ -15,6 +15,9 @@ export const users = pgTable(
     clinicId: uuid('clinic_id').references(() => clinics.id, { onDelete: 'cascade' }),
     email: varchar('email', { length: 255 }).notNull(),
     fullName: varchar('full_name', { length: 255 }).notNull(),
+    qualification: varchar('qualification', { length: 255 }),
+    phone: varchar('phone', { length: 50 }),
+    address: text('address'),
     role: userRoleEnum('role').default('receptionist').notNull(),
     isSuperAdmin: boolean('is_super_admin').default(false).notNull(),
     active: boolean('active').default(true).notNull(),

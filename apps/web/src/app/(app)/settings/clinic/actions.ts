@@ -13,6 +13,7 @@ const updateClinicSchema = z.object({
   slug: z.string().min(2, 'Slug must be at least 2 characters').regex(/^[a-z0-9-]+$/, 'Slug must be lowercase alphanumeric and hyphens only'),
   address: z.string().optional(),
   phone: z.string().optional(),
+  currency: z.string().min(2, 'Currency code is required').default('PKR'),
   timezone: z.string().min(2, 'Timezone is required'),
   locale: z.string().min(2, 'Locale is required'),
 });
@@ -37,6 +38,7 @@ export async function updateClinicAction(
     slug: formData.get('slug'),
     address: formData.get('address'),
     phone: formData.get('phone'),
+    currency: formData.get('currency') || 'PKR',
     timezone: formData.get('timezone'),
     locale: formData.get('locale'),
   };
@@ -56,6 +58,7 @@ export async function updateClinicAction(
           slug: parsed.data.slug,
           address: parsed.data.address || null,
           phone: parsed.data.phone || null,
+          currency: parsed.data.currency,
           timezone: parsed.data.timezone,
           locale: parsed.data.locale,
           updatedAt: new Date(),

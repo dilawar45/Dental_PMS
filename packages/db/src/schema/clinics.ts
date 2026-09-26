@@ -11,6 +11,7 @@ export const clinics = pgTable('clinics', {
   slug: varchar('slug', { length: 100 }).unique(),
   address: text('address'),
   phone: varchar('phone', { length: 50 }),
+  currency: varchar('currency', { length: 10 }).default('PKR').notNull(),
   timezone: varchar('timezone', { length: 50 }).default('Asia/Karachi').notNull(),
   locale: varchar('locale', { length: 20 }).default('en-PK').notNull(),
   status: clinicStatusEnum('status').default('active').notNull(),
