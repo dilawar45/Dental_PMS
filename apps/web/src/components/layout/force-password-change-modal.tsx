@@ -124,7 +124,7 @@ export function ForcePasswordChangeModal({
 
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-            <span>Only you will know this password. The clinic owner will not have access to it.</span>
+            <span>Only you know this password and no one will have access to it.</span>
           </div>
 
           <button
@@ -142,6 +142,17 @@ export function ForcePasswordChangeModal({
             )}
           </button>
         </form>
+
+        <div className="pt-2 text-center border-t border-slate-100 dark:border-slate-800">
+          <form action="/auth/signout" method="POST">
+            <button
+              type="submit"
+              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium cursor-pointer"
+            >
+              Sign out & return to login
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
