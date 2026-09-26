@@ -52,6 +52,11 @@ const updateStaffSchema = z.object({
     .trim()
     .min(2, 'Full name must be at least 2 characters')
     .max(25, 'Full name cannot exceed 25 characters'),
+  email: z
+    .string()
+    .trim()
+    .email('Please enter a valid email address for staff login')
+    .max(35, 'Email cannot exceed 35 characters'),
   qualification: z
     .string()
     .trim()
@@ -189,20 +194,38 @@ export async function createStaffUserAction(formData: FormData): Promise<StaffAc
       return { error: 'Failed to provision staff authentication account.' };
     }
 
-    // 3. Insert into public.users with must_change_password: true
+    // 3. Insert or update public.users with must_change_password: true
+    // onConflictDoUpdate prevents duplicate key errors if the auth trigger already inserted the ID
     await withClinic(db, clinicId, async (tx) => {
-      await tx.insert(users).values({
-        id: authUserId,
-        clinicId,
-        email: normalizedEmail,
-        fullName,
-        qualification: qualification || null,
-        phone,
-        address: address || null,
-        role,
-        active: true,
-        mustChangePassword: true,
-      });
+      await tx
+        .insert(users)
+        .values({
+          id: authUserId,
+          clinicId,
+          email: normalizedEmail,
+          fullName,
+          qualification: qualification || null,
+          phone,
+          address: address || null,
+          role,
+          active: true,
+          mustChangePassword: true,
+        })
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            clinicId,
+            email: normalizedEmail,
+            fullName,
+            qualification: qualification || null,
+            phone,
+            address: address || null,
+            role,
+            active: true,
+            mustChangePassword: true,
+            updatedAt: new Date(),
+          },
+        });
     });
 
     revalidatePath('/settings/users');
@@ -213,7 +236,7 @@ export async function createStaffUserAction(formData: FormData): Promise<StaffAc
 }
 
 /**
- * Updates an existing staff member's profile, qualification, contact, and role.
+ * Updates an existing staff member's profile, qualification, contact, email, and role.
  */
 export async function updateStaffUserAction(formData: FormData): Promise<StaffActionResult> {
   const { user, clinicId } = await requireUser();
@@ -225,6 +248,7 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
   const raw = {
     userId: formData.get('userId'),
     fullName: formData.get('fullName'),
+    email: formData.get('email'),
     qualification: formData.get('qualification'),
     phone: formData.get('phone'),
     address: formData.get('address'),
@@ -237,7 +261,8 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
     return { error: parsed.error.issues.map((i) => i.message).join(', ') };
   }
 
-  const { userId, fullName, qualification, phone, address, role, password } = parsed.data;
+  const { userId, fullName, email, qualification, phone, address, role, password } = parsed.data;
+  const normalizedEmail = email.toLowerCase().trim();
 
   // Prevent self-demotion from owner role
   if (user.id === userId && role !== 'owner') {
@@ -245,12 +270,23 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
   }
 
   try {
-    // 1. Update public.users
+    // 1. Check if the updated email is already in use by another user
+    const [existingEmailUser] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail));
+
+    if (existingEmailUser && existingEmailUser.id !== userId) {
+      return { error: `The email "${normalizedEmail}" is already used by another staff member.` };
+    }
+
+    // 2. Update public.users
     await withClinic(db, clinicId, async (tx) => {
       await tx
         .update(users)
         .set({
           fullName,
+          email: normalizedEmail,
           qualification: qualification || null,
           phone,
           address: address || null,
@@ -260,7 +296,22 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
         .where(and(eq(users.id, userId), eq(users.clinicId, clinicId)));
     });
 
-    // 2. If temporary password reset provided by owner, set mustChangePassword: true
+    // 3. Update auth.users email and metadata
+    const userMetadata = {
+      full_name: fullName,
+      role,
+      clinic_id: clinicId,
+    };
+
+    await db.execute(
+      sql`UPDATE auth.users
+          SET email = ${normalizedEmail},
+              raw_user_meta_data = raw_user_meta_data || ${JSON.stringify(userMetadata)}::jsonb,
+              updated_at = now()
+          WHERE id = ${userId}::uuid`
+    );
+
+    // 4. If temporary password reset provided by owner, set mustChangePassword: true
     if (password && password.trim().length >= 8) {
       await db.execute(
         sql`UPDATE auth.users
