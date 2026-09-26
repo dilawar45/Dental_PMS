@@ -124,7 +124,7 @@ export function ForcePasswordChangeModal({
 
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-start gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-            <span>Only you know this password and no one will have access to it.</span>
+            <span>Your password is completely private. No one else has access to it.</span>
           </div>
 
           <button
