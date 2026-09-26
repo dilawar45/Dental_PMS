@@ -16,20 +16,22 @@ const registerSchema = z.object({
     .string()
     .trim()
     .min(2, 'Full name must be at least 2 characters')
-    .max(100, 'Full name cannot exceed 100 characters'),
+    .max(25, 'Full name cannot exceed 25 characters'),
   cnic: z
     .string()
     .trim()
-    .regex(/^\d{5}-\d{7}-\d$/, 'CNIC must be formatted as 13 digits: #####-#######-#'),
+    .min(13, 'CNIC must be at least 13 digits')
+    .max(20, 'CNIC cannot exceed 20 digits')
+    .regex(/^[0-9-]+$/, 'CNIC must contain only digits and hyphens'),
   phone: z
     .string()
     .trim()
-    .regex(/^\+92\d{10}$/, 'Phone number must follow Pakistani format (+923XXXXXXXXX)'),
+    .regex(/^\+?[0-9]{10,15}$/, 'Phone number must be digits only (10 to 15 digits)'),
   age: z
-    .number()
+    .number({ message: 'Age is required' })
     .int('Age must be an integer')
-    .min(1, 'Age must be between 1 and 120')
-    .max(120, 'Age must be between 1 and 120'),
+    .min(1, 'Age must be between 1 and 100')
+    .max(100, 'Age must be between 1 and 100'),
   gender: z.enum(['male', 'female', 'other'], {
     message: "Gender must be 'male', 'female', or 'other'",
   }),
@@ -37,11 +39,14 @@ const registerSchema = z.object({
     .string()
     .trim()
     .email('Invalid email address')
-    .max(255, 'Email cannot exceed 255 characters'),
+    .max(25, 'Email cannot exceed 25 characters')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, 'Password must contain at least one letter and one number'),
+    .max(12, 'Password cannot exceed 12 characters'),
   clinic_id: z.string().uuid('Invalid clinic ID format'),
 });
 
@@ -75,10 +80,10 @@ export async function POST(req: Request) {
       clinic_id: clinicId,
     } = parsed.data;
 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email && email.trim() ? email.toLowerCase().trim() : null;
     const db = getDefaultDb();
 
-    // Check CNIC and Email uniqueness within clinic
+    // Check CNIC, Phone, and Email uniqueness within clinic
     const conflictResult = await withClinic(db, clinicId, async (tx) => {
       const existingCnic = await tx
         .select({ id: patients.id })
@@ -96,20 +101,38 @@ export async function POST(req: Request) {
         return { conflict: 'cnic' };
       }
 
-      const existingEmail = await tx
+      const existingPhone = await tx
         .select({ id: patients.id })
         .from(patients)
         .where(
           and(
             eq(patients.clinicId, clinicId),
-            sql`LOWER(${patients.email}) = ${normalizedEmail}`,
+            eq(patients.phone, phone),
             isNull(patients.deletedAt)
           )
         )
         .limit(1);
 
-      if (existingEmail.length > 0) {
-        return { conflict: 'email' };
+      if (existingPhone.length > 0) {
+        return { conflict: 'phone' };
+      }
+
+      if (normalizedEmail) {
+        const existingEmail = await tx
+          .select({ id: patients.id })
+          .from(patients)
+          .where(
+            and(
+              eq(patients.clinicId, clinicId),
+              sql`LOWER(${patients.email}) = ${normalizedEmail}`,
+              isNull(patients.deletedAt)
+            )
+          )
+          .limit(1);
+
+        if (existingEmail.length > 0) {
+          return { conflict: 'email' };
+        }
       }
 
       return null;
@@ -119,6 +142,16 @@ export async function POST(req: Request) {
       return withCors(
         NextResponse.json(
           { error: 'A patient with this CNIC is already registered' },
+          { status: 409 }
+        ),
+        req
+      );
+    }
+
+    if (conflictResult?.conflict === 'phone') {
+      return withCors(
+        NextResponse.json(
+          { error: 'A patient with this phone number is already registered' },
           { status: 409 }
         ),
         req

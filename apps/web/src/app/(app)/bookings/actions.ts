@@ -32,7 +32,7 @@ import {
 export async function approveBookingRequestAction(
   rawInput: ApproveBookingInput
 ): Promise<ActionResult<{ appointmentId: string }>> {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { user } = await requireRole(['owner', 'receptionist', 'dentist']);
 
   const parsed = approveBookingSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -250,7 +250,7 @@ export async function approveBookingRequestAction(
 export async function rejectBookingRequestAction(
   rawInput: RejectBookingInput
 ): Promise<ActionResult<{ id: string }>> {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { user } = await requireRole(['owner', 'receptionist', 'dentist']);
 
   const parsed = rejectBookingSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -360,7 +360,7 @@ export async function rejectBookingRequestAction(
 export async function linkBookingPatientAction(
   rawInput: LinkPatientInput
 ): Promise<ActionResult<{ patientId: string }>> {
-  const { user } = await requireRole(['owner', 'receptionist']);
+  const { user } = await requireRole(['owner', 'receptionist', 'dentist']);
 
   const parsed = linkPatientSchema.safeParse(rawInput);
   if (!parsed.success) {

@@ -13,9 +13,22 @@ import {
 import { logAudit } from '@/lib/audit';
 import { withCors, handleCorsPreflight } from '@/lib/cors';
 
+import { or } from 'drizzle-orm';
+
 const loginSchema = z.object({
-  email: z.string().trim().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, 'Phone number, CNIC, or Email is required')
+    .max(35, 'Identifier cannot exceed 35 characters')
+    .optional(),
+  email: z.string().trim().max(35).optional(),
+  phone: z.string().trim().max(18).optional(),
+  cnic: z.string().trim().max(20).optional(),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(12, 'Password cannot exceed 12 characters'),
   clinic_id: z.string().uuid('Invalid clinic ID format'),
 });
 
@@ -38,11 +51,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, clinic_id: clinicId } = parsed.data;
-    const normalizedEmail = email.toLowerCase();
+    const { identifier, email, phone, cnic, password, clinic_id: clinicId } = parsed.data;
+    const loginValue = (identifier || phone || cnic || email || '').trim();
 
-    // Rate limiting: 5 failed attempts per email per 15 min
-    const rateCheck = await checkPatientLoginRateLimit(normalizedEmail);
+    if (!loginValue) {
+      return withCors(
+        NextResponse.json(
+          { error: 'Please enter your phone number, CNIC, or email address' },
+          { status: 400 }
+        ),
+        req
+      );
+    }
+
+    const normalizedLogin = loginValue.toLowerCase();
+
+    // Rate limiting: 5 failed attempts per identifier per 15 min
+    const rateCheck = await checkPatientLoginRateLimit(normalizedLogin);
     if (!rateCheck.allowed) {
       return withCors(
         NextResponse.json(
@@ -58,7 +83,7 @@ export async function POST(req: Request) {
 
     const db = getDefaultDb();
 
-    // Look up patient by email within clinic scope
+    // Look up patient by email, phone, or CNIC within clinic scope
     const patientRow = await withClinic(db, clinicId, async (tx) => {
       const [p] = await tx
         .select({
@@ -66,14 +91,19 @@ export async function POST(req: Request) {
           fullName: patients.fullName,
           phone: patients.phone,
           email: patients.email,
+          cnic: patients.cnic,
           passwordHash: patients.passwordHash,
         })
         .from(patients)
         .where(
           and(
             eq(patients.clinicId, clinicId),
-            sql`LOWER(${patients.email}) = ${normalizedEmail}`,
-            isNull(patients.deletedAt)
+            isNull(patients.deletedAt),
+            or(
+              eq(patients.phone, loginValue),
+              eq(patients.cnic, loginValue),
+              sql`LOWER(${patients.email}) = ${normalizedLogin}`
+            )
           )
         )
         .limit(1);

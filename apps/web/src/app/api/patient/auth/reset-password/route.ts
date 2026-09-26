@@ -11,15 +11,17 @@ const resetPasswordSchema = z.object({
   cnic: z
     .string()
     .trim()
-    .regex(/^\d{5}-\d{7}-\d$/, 'CNIC must be formatted as 13 digits: #####-#######-#'),
+    .min(13, 'CNIC must be at least 13 digits')
+    .max(20, 'CNIC cannot exceed 20 digits')
+    .regex(/^[0-9-]+$/, 'CNIC must contain only digits and hyphens'),
   phone: z
     .string()
     .trim()
-    .regex(/^\+92\d{10}$/, 'Phone number must follow Pakistani format (+923XXXXXXXXX)'),
+    .regex(/^\+?[0-9]{10,15}$/, 'Phone number must be digits only (10 to 15 digits)'),
   new_password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, 'Password must contain at least one letter and one number'),
+    .max(12, 'Password cannot exceed 12 characters'),
   clinic_id: z.string().uuid('Invalid clinic ID format'),
 });
 

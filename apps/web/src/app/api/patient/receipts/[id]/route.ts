@@ -28,6 +28,14 @@ export async function GET(
           amount: receipts.amount,
           storageKey: receipts.storageKey,
           issuedAt: receipts.issuedAt,
+          invoiceNumber: invoices.invoiceNumber,
+          items: invoices.items,
+          subtotal: invoices.subtotal,
+          tax: invoices.tax,
+          total: invoices.total,
+          paid: invoices.paid,
+          status: invoices.status,
+          invoiceDate: invoices.issuedAt,
         })
         .from(receipts)
         .innerJoin(invoices, eq(receipts.invoiceId, invoices.id))
@@ -50,16 +58,31 @@ export async function GET(
       );
     }
 
-    // Generate signed download URL via storage provider
-    const storage = getStorageProvider(db);
-    const { url } = await storage.getSignedUrl('receipts', receiptRecord.storageKey, 3600);
+    let downloadUrl: string | null = null;
+    if (receiptRecord.storageKey) {
+      try {
+        const storage = getStorageProvider(db);
+        const { url } = await storage.getSignedUrl('receipts', receiptRecord.storageKey, 3600);
+        downloadUrl = url;
+      } catch {
+        downloadUrl = null;
+      }
+    }
 
     return withCors(
       NextResponse.json({
         id: receiptRecord.id,
         receipt_number: receiptRecord.receiptNumber,
+        invoice_number: receiptRecord.invoiceNumber,
         amount: receiptRecord.amount,
-        url,
+        issued_at: receiptRecord.issuedAt,
+        items: receiptRecord.items,
+        subtotal: receiptRecord.subtotal,
+        tax: receiptRecord.tax,
+        total: receiptRecord.total,
+        paid: receiptRecord.paid,
+        status: receiptRecord.status,
+        url: downloadUrl,
       }),
       req
     );
