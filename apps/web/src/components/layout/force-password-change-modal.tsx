@@ -2,17 +2,20 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { completeFirstLoginPasswordChangeAction } from '@/app/(app)/settings/users/actions';
 import { Lock, Eye, EyeOff, ShieldCheck, Loader2, KeyRound } from 'lucide-react';
 
 interface ForcePasswordChangeModalProps {
   mustChange: boolean;
   userName: string;
+  userEmail: string;
 }
 
 export function ForcePasswordChangeModal({
   mustChange,
   userName,
+  userEmail,
 }: ForcePasswordChangeModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(mustChange);
@@ -41,8 +44,18 @@ export function ForcePasswordChangeModal({
     startTransition(async () => {
       const res = await completeFirstLoginPasswordChangeAction(password);
       if (res.success) {
+        try {
+          // Re-authenticate client to establish a fresh session cookie with the new password
+          const supabase = createClient();
+          await supabase.auth.signInWithPassword({
+            email: userEmail,
+            password,
+          });
+        } catch {
+          // Fallback if re-auth throws
+        }
         setIsOpen(false);
-        router.refresh();
+        window.location.href = '/dashboard';
       } else {
         setErrorMsg(res.error || 'Failed to update password. Please try again.');
       }

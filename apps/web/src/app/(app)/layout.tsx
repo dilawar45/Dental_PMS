@@ -46,6 +46,7 @@ export default async function AuthenticatedAppLayout({
       <ForcePasswordChangeModal
         mustChange={Boolean(user.mustChangePassword)}
         userName={user.fullName || 'Staff Member'}
+        userEmail={user.email}
       />
 
       <div className="flex-1 flex flex-col">
