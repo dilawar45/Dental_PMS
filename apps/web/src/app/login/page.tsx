@@ -16,6 +16,8 @@ import {
   Smile,
 } from 'lucide-react';
 
+import { checkUserActiveStatus } from './actions';
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,6 +77,15 @@ function LoginForm() {
       }
 
       if (data.user) {
+        // Check if account is marked inactive in database
+        const status = await checkUserActiveStatus(data.user.id);
+        if (status.exists && !status.active) {
+          await supabase.auth.signOut();
+          setErrorMsg('This account is currently inactive. Please contact your clinic administrator for assistance.');
+          setIsLoading(false);
+          return;
+        }
+
         const isSuperAdmin =
           data.user.user_metadata?.role === 'super_admin' ||
           data.user.email === 'superadmin@dentalpms.platform';
