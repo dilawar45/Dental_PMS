@@ -68,7 +68,12 @@ export async function getCurrentUser(): Promise<CurrentUserContext | null> {
     .where(eq(users.id, authUser.id));
 
   if (!profile || !profile.active) {
-    // User profile missing or deactivated
+    // User profile missing or deactivated -> clear stale session
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore cleanup error
+    }
     return null;
   }
 

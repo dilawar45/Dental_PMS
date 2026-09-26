@@ -62,8 +62,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Authenticated users trying to access /login or / -> redirect to /dashboard
-  if (user && (isLoginPage || request.nextUrl.pathname === '/')) {
+  // Authenticated users accessing the root '/' page are forwarded to /dashboard
+  if (user && request.nextUrl.pathname === '/') {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
