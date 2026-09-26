@@ -9,24 +9,72 @@ import { eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+const phoneRegex = /^\+?[0-9]{10,18}$/;
+
 const createStaffSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Valid email address is required'),
-  qualification: z.string().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
+  fullName: z
+    .string()
+    .trim()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(25, 'Full name cannot exceed 25 characters'),
+  email: z
+    .string()
+    .trim()
+    .email('Please enter a valid email address for staff login')
+    .max(35, 'Email cannot exceed 35 characters'),
+  qualification: z
+    .string()
+    .trim()
+    .max(100, 'Qualification cannot exceed 100 characters')
+    .optional()
+    .or(z.literal('')),
+  phone: z
+    .string()
+    .trim()
+    .regex(phoneRegex, 'Phone number must be digits only (10 to 18 digits)'),
+  address: z
+    .string()
+    .trim()
+    .max(100, 'Address cannot exceed 100 characters')
+    .optional()
+    .or(z.literal('')),
   role: z.enum(['owner', 'dentist', 'receptionist', 'assistant']),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z
+    .string()
+    .min(8, 'Initial password must be at least 8 characters')
+    .max(12, 'Initial password cannot exceed 12 characters'),
 });
 
 const updateStaffSchema = z.object({
   userId: z.string().uuid(),
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  qualification: z.string().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
+  fullName: z
+    .string()
+    .trim()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(25, 'Full name cannot exceed 25 characters'),
+  qualification: z
+    .string()
+    .trim()
+    .max(100, 'Qualification cannot exceed 100 characters')
+    .optional()
+    .or(z.literal('')),
+  phone: z
+    .string()
+    .trim()
+    .regex(phoneRegex, 'Phone number must be digits only (10 to 18 digits)'),
+  address: z
+    .string()
+    .trim()
+    .max(100, 'Address cannot exceed 100 characters')
+    .optional()
+    .or(z.literal('')),
   role: z.enum(['owner', 'dentist', 'receptionist', 'assistant']),
-  password: z.string().min(6).optional().or(z.literal('')),
+  password: z
+    .string()
+    .min(8, 'Password must be between 8 and 12 characters')
+    .max(12, 'Password must be between 8 and 12 characters')
+    .optional()
+    .or(z.literal('')),
 });
 
 const updateRoleSchema = z.object({
@@ -45,7 +93,8 @@ export type StaffActionResult = {
 };
 
 /**
- * Creates a new staff member account in both auth.users and public.users.
+ * Creates a new staff member account in auth.users & public.users.
+ * Sets must_change_password: true so the user is forced to set their private password on 1st login.
  */
 export async function createStaffUserAction(formData: FormData): Promise<StaffActionResult> {
   const { user, clinicId } = await requireUser();
@@ -73,51 +122,74 @@ export async function createStaffUserAction(formData: FormData): Promise<StaffAc
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    // Check if user already exists
+    // 1. Check if user already exists in public.users
     const [existing] = await db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.email, normalizedEmail));
 
     if (existing) {
-      return { error: `A staff member with email "${normalizedEmail}" already exists.` };
+      return { error: `A staff member with email "${normalizedEmail}" is already registered.` };
     }
 
-    // 1. Create or ensure record in auth.users
-    const authInsert = await db.execute(
-      sql`INSERT INTO auth.users (
-            id, instance_id, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at, role,
-            aud, confirmation_token, recovery_token, email_change_token_new,
-            email_change, email_change_token_current, phone_change, phone_change_token, reauthentication_token
-          )
-          VALUES (
-            gen_random_uuid(),
-            '00000000-0000-0000-0000-000000000000'::uuid,
-            ${normalizedEmail},
-            crypt(${password}, gen_salt('bf')),
-            now(),
-            '{"provider":"email","providers":["email"]}'::jsonb,
-            ${JSON.stringify({ full_name: fullName, role, clinic_id: clinicId })}::jsonb,
-            now(),
-            now(),
-            'authenticated',
-            'authenticated',
-            '', '', '', '', '', '', '', ''
-          )
-          ON CONFLICT (email) DO UPDATE
-          SET encrypted_password = crypt(${password}, gen_salt('bf')),
-              raw_user_meta_data = ${JSON.stringify({ full_name: fullName, role, clinic_id: clinicId })}::jsonb,
-              updated_at = now()
-          RETURNING id`
+    // 2. Check if user exists in auth.users
+    const existingAuth = await db.execute(
+      sql`SELECT id FROM auth.users WHERE email = ${normalizedEmail} LIMIT 1`
     );
 
-    const authUserId = authInsert[0]?.['id'] as string;
-    if (!authUserId) {
-      return { error: 'Failed to provision authentication account.' };
+    let authUserId: string;
+
+    const userMetadata = {
+      full_name: fullName,
+      role,
+      clinic_id: clinicId,
+      must_change_password: true,
+    };
+
+    if (existingAuth.length > 0 && existingAuth[0]?.['id']) {
+      // User exists in auth.users, update password & metadata
+      authUserId = existingAuth[0]['id'] as string;
+      await db.execute(
+        sql`UPDATE auth.users
+            SET encrypted_password = crypt(${password}, gen_salt('bf')),
+                email_confirmed_at = COALESCE(email_confirmed_at, now()),
+                raw_user_meta_data = ${JSON.stringify(userMetadata)}::jsonb,
+                updated_at = now()
+            WHERE id = ${authUserId}::uuid`
+      );
+    } else {
+      // Insert new user into auth.users safely
+      const insertedAuth = await db.execute(
+        sql`INSERT INTO auth.users (
+              id, instance_id, email, encrypted_password, email_confirmed_at,
+              raw_app_meta_data, raw_user_meta_data, created_at, updated_at, role,
+              aud, confirmation_token, recovery_token, email_change_token_new,
+              email_change, email_change_token_current, phone_change, phone_change_token, reauthentication_token
+            )
+            VALUES (
+              gen_random_uuid(),
+              '00000000-0000-0000-0000-000000000000'::uuid,
+              ${normalizedEmail},
+              crypt(${password}, gen_salt('bf')),
+              now(),
+              '{"provider":"email","providers":["email"]}'::jsonb,
+              ${JSON.stringify(userMetadata)}::jsonb,
+              now(),
+              now(),
+              'authenticated',
+              'authenticated',
+              '', '', '', '', '', '', '', ''
+            )
+            RETURNING id`
+      );
+      authUserId = insertedAuth[0]?.['id'] as string;
     }
 
-    // 2. Insert into public.users
+    if (!authUserId) {
+      return { error: 'Failed to provision staff authentication account.' };
+    }
+
+    // 3. Insert into public.users with must_change_password: true
     await withClinic(db, clinicId, async (tx) => {
       await tx.insert(users).values({
         id: authUserId,
@@ -125,10 +197,11 @@ export async function createStaffUserAction(formData: FormData): Promise<StaffAc
         email: normalizedEmail,
         fullName,
         qualification: qualification || null,
-        phone: phone || null,
+        phone,
         address: address || null,
         role,
         active: true,
+        mustChangePassword: true,
       });
     });
 
@@ -140,7 +213,7 @@ export async function createStaffUserAction(formData: FormData): Promise<StaffAc
 }
 
 /**
- * Updates an existing staff member's profile, contact info, qualification, and role.
+ * Updates an existing staff member's profile, qualification, contact, and role.
  */
 export async function updateStaffUserAction(formData: FormData): Promise<StaffActionResult> {
   const { user, clinicId } = await requireUser();
@@ -179,7 +252,7 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
         .set({
           fullName,
           qualification: qualification || null,
-          phone: phone || null,
+          phone,
           address: address || null,
           role,
           updatedAt: new Date(),
@@ -187,15 +260,22 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
         .where(and(eq(users.id, userId), eq(users.clinicId, clinicId)));
     });
 
-    // 2. If password provided, update auth.users
-    if (password && password.trim().length >= 6) {
+    // 2. If temporary password reset provided by owner, set mustChangePassword: true
+    if (password && password.trim().length >= 8) {
       await db.execute(
         sql`UPDATE auth.users
             SET encrypted_password = crypt(${password.trim()}, gen_salt('bf')),
-                raw_user_meta_data = raw_user_meta_data || ${JSON.stringify({ full_name: fullName, role })}::jsonb,
+                raw_user_meta_data = raw_user_meta_data || ${JSON.stringify({ full_name: fullName, role, must_change_password: true })}::jsonb,
                 updated_at = now()
             WHERE id = ${userId}::uuid`
       );
+
+      await withClinic(db, clinicId, async (tx) => {
+        await tx
+          .update(users)
+          .set({ mustChangePassword: true })
+          .where(eq(users.id, userId));
+      });
     }
 
     revalidatePath('/settings/users');
@@ -206,7 +286,7 @@ export async function updateStaffUserAction(formData: FormData): Promise<StaffAc
 }
 
 /**
- * Deletes a staff member from the clinic.
+ * Removes a staff member from the clinic roster and auth.
  */
 export async function deleteStaffUserAction(targetUserId: string): Promise<StaffActionResult> {
   const { user, clinicId } = await requireUser();
@@ -298,4 +378,35 @@ export async function toggleUserActiveAction(userId: string, currentActive: bool
 
   revalidatePath('/settings/users');
   return { success: true };
+}
+
+/**
+ * Action for a staff member to set their own private password (clearing must_change_password flag).
+ */
+export async function completeFirstLoginPasswordChangeAction(newPassword: string): Promise<StaffActionResult> {
+  const { user } = await requireUser();
+
+  if (newPassword.length < 8 || newPassword.length > 12) {
+    return { error: 'Password must be between 8 and 12 characters.' };
+  }
+
+  try {
+    await db.execute(
+      sql`UPDATE auth.users
+          SET encrypted_password = crypt(${newPassword}, gen_salt('bf')),
+              raw_user_meta_data = raw_user_meta_data || '{"must_change_password": false}'::jsonb,
+              updated_at = now()
+          WHERE id = ${user.id}::uuid`
+    );
+
+    await db
+      .update(users)
+      .set({ mustChangePassword: false, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Failed to update password.' };
+  }
 }

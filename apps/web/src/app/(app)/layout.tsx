@@ -5,6 +5,7 @@ import { clinics } from '@dental-pms/db/schema';
 import { eq } from 'drizzle-orm';
 import { AppShell } from '@/components/layout/app-shell';
 import { SupportModeBanner } from '@/components/layout/support-mode-banner';
+import { ForcePasswordChangeModal } from '@/components/layout/force-password-change-modal';
 import { redirect } from 'next/navigation';
 
 export default async function AuthenticatedAppLayout({
@@ -40,6 +41,13 @@ export default async function AuthenticatedAppLayout({
           expiresAt={supportSessionExpiresAt}
         />
       )}
+
+      {/* Forced first-time login password change prompt for staff privacy */}
+      <ForcePasswordChangeModal
+        mustChange={Boolean(user.mustChangePassword)}
+        userName={user.fullName || 'Staff Member'}
+      />
+
       <div className="flex-1 flex flex-col">
         <AppShell user={user} clinic={clinic}>
           {children}

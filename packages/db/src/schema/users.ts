@@ -21,6 +21,7 @@ export const users = pgTable(
     role: userRoleEnum('role').default('receptionist').notNull(),
     isSuperAdmin: boolean('is_super_admin').default(false).notNull(),
     active: boolean('active').default(true).notNull(),
+    mustChangePassword: boolean('must_change_password').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
