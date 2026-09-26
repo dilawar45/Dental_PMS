@@ -32,11 +32,39 @@ function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErrorMsg('Please enter your email address.');
+      return;
+    }
+    if (cleanEmail.length > 35) {
+      setErrorMsg('Email address cannot exceed 35 characters.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+    if (!password) {
+      setErrorMsg('Please enter your password.');
+      return;
+    }
+    if (password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters.');
+      return;
+    }
+    if (password.length > 32) {
+      setErrorMsg('Password cannot exceed 32 characters.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: cleanEmail,
         password,
       });
 
@@ -176,9 +204,10 @@ function LoginForm() {
                     type="email"
                     autoComplete="email"
                     required
+                    maxLength={35}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="doctor@brightsmile.com"
+                    onChange={(e) => setEmail(e.target.value.slice(0, 35))}
+                    placeholder=""
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 focus:bg-white transition-all"
                   />
                 </div>
@@ -198,9 +227,11 @@ function LoginForm() {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     required
+                    minLength={8}
+                    maxLength={32}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
+                    onChange={(e) => setPassword(e.target.value.slice(0, 32))}
+                    placeholder=""
                     className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 focus:bg-white transition-all"
                   />
                   <button
