@@ -52,64 +52,7 @@ export async function getInvoices(
   const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1);
 
   return await withClinic(db, clinicId, async (tx: ClinicTransaction) => {
-    // 1. Calculate Summary Metrics for Clinic
-    // A. All active invoices and their receipts for outstanding & overdue
-    const allInvoicesData = await tx
-      .select({
-        id: invoices.id,
-        amount: invoices.total,
-        status: invoices.status,
-        issuedAt: invoices.issuedAt,
-        paidAmount: sql<string>`COALESCE(SUM(${receipts.amount}), 0)`.as('paid_amount'),
-      })
-      .from(invoices)
-      .leftJoin(receipts, eq(receipts.invoiceId, invoices.id))
-      .where(eq(invoices.clinicId, clinicId))
-      .groupBy(invoices.id, invoices.total, invoices.status, invoices.issuedAt);
-
-    let outstandingCents = 0;
-    let overdueCents = 0;
-    let overdueCount = 0;
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    for (const inv of allInvoicesData) {
-      if (inv.status === 'void') continue;
-      const totalC = toCents(inv.amount);
-      const paidC = toCents(inv.paidAmount);
-      const balanceC = Math.max(0, totalC - paidC);
-
-      if (balanceC > 0) {
-        outstandingCents += balanceC;
-        if (new Date(inv.issuedAt) < thirtyDaysAgo) {
-          overdueCents += balanceC;
-          overdueCount += 1;
-        }
-      }
-    }
-
-    // B. Total collected this month
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const [monthReceiptsResult] = await tx
-      .select({
-        monthTotal: sql<string>`COALESCE(SUM(${receipts.amount}), 0)`.as('month_total'),
-      })
-      .from(receipts)
-      .where(
-        and(
-          eq(receipts.clinicId, clinicId),
-          gte(receipts.issuedAt, startOfMonth)
-        )
-      );
-
-    const metrics: InvoiceMetrics = {
-      totalOutstanding: fromCents(outstandingCents),
-      totalCollectedMonth: fromCents(toCents(monthReceiptsResult?.monthTotal || '0')),
-      overdueAmount: fromCents(overdueCents),
-      overdueCount,
-    };
-
-    // 2. Build where filter conditions for query list
+    // 1. Build where filter conditions for query list
     const conditions: SQL[] = [eq(invoices.clinicId, clinicId)];
 
     if (params.q?.trim()) {
@@ -139,35 +82,94 @@ export async function getInvoices(
       }
     }
 
-    // Query rows joined with patients and receipts
-    const baseQuery = tx
-      .select({
-        id: invoices.id,
-        invoiceNumber: invoices.invoiceNumber,
-        patientId: invoices.patientId,
-        patientName: patients.fullName,
-        patientPhone: patients.phone,
-        issuedAt: invoices.issuedAt,
-        total: invoices.total,
-        status: invoices.status,
-        paid: sql<string>`COALESCE(SUM(${receipts.amount}), 0)`.as('paid_amount'),
-      })
-      .from(invoices)
-      .innerJoin(patients, eq(invoices.patientId, patients.id))
-      .leftJoin(receipts, eq(receipts.invoiceId, invoices.id))
-      .where(and(...conditions))
-      .groupBy(
-        invoices.id,
-        invoices.invoiceNumber,
-        invoices.patientId,
-        patients.fullName,
-        patients.phone,
-        invoices.issuedAt,
-        invoices.total,
-        invoices.status
-      );
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const rawRows = await baseQuery;
+    // 2. Execute metrics and invoice list queries concurrently
+    const [allInvoicesData, monthReceiptsRows, rawRows] = await Promise.all([
+      // A. All active invoices and their receipts for outstanding & overdue
+      tx
+        .select({
+          id: invoices.id,
+          amount: invoices.total,
+          status: invoices.status,
+          issuedAt: invoices.issuedAt,
+          paidAmount: sql<string>`COALESCE(SUM(${receipts.amount}), 0)`.as('paid_amount'),
+        })
+        .from(invoices)
+        .leftJoin(receipts, eq(receipts.invoiceId, invoices.id))
+        .where(eq(invoices.clinicId, clinicId))
+        .groupBy(invoices.id, invoices.total, invoices.status, invoices.issuedAt),
+
+      // B. Total collected this month
+      tx
+        .select({
+          monthTotal: sql<string>`COALESCE(SUM(${receipts.amount}), 0)`.as('month_total'),
+        })
+        .from(receipts)
+        .where(
+          and(
+            eq(receipts.clinicId, clinicId),
+            gte(receipts.issuedAt, startOfMonth)
+          )
+        ),
+
+      // C. Query rows joined with patients and receipts
+      tx
+        .select({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          patientId: invoices.patientId,
+          patientName: patients.fullName,
+          patientPhone: patients.phone,
+          issuedAt: invoices.issuedAt,
+          total: invoices.total,
+          status: invoices.status,
+          paid: sql<string>`COALESCE(SUM(${receipts.amount}), 0)`.as('paid_amount'),
+        })
+        .from(invoices)
+        .innerJoin(patients, eq(invoices.patientId, patients.id))
+        .leftJoin(receipts, eq(receipts.invoiceId, invoices.id))
+        .where(and(...conditions))
+        .groupBy(
+          invoices.id,
+          invoices.invoiceNumber,
+          invoices.patientId,
+          patients.fullName,
+          patients.phone,
+          invoices.issuedAt,
+          invoices.total,
+          invoices.status
+        ),
+    ]);
+
+    let outstandingCents = 0;
+    let overdueCents = 0;
+    let overdueCount = 0;
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    for (const inv of allInvoicesData) {
+      if (inv.status === 'void') continue;
+      const totalC = toCents(inv.amount);
+      const paidC = toCents(inv.paidAmount);
+      const balanceC = Math.max(0, totalC - paidC);
+
+      if (balanceC > 0) {
+        outstandingCents += balanceC;
+        if (new Date(inv.issuedAt) < thirtyDaysAgo) {
+          overdueCents += balanceC;
+          overdueCount += 1;
+        }
+      }
+    }
+
+    const monthReceiptsResult = monthReceiptsRows[0];
+    const metrics: InvoiceMetrics = {
+      totalOutstanding: fromCents(outstandingCents),
+      totalCollectedMonth: fromCents(toCents(monthReceiptsResult?.monthTotal || '0')),
+      overdueAmount: fromCents(overdueCents),
+      overdueCount,
+    };
 
     // Map rows and derive status & balance
     let items: InvoiceListItem[] = rawRows.map((r) => {

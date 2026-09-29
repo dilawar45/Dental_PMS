@@ -10,75 +10,86 @@ export default async function DashboardPage() {
   const { user, clinicId } = await requireUser();
 
   const data = await withClinic(db, clinicId, async (tx) => {
-    // 1. Pending booking requests count
-    const [pendingBookingsRes] = await tx
-      .select({ count: count() })
-      .from(bookingRequests)
-      .where(eq(bookingRequests.status, 'pending'));
-
-    // 2. Active patients count (deleted_at is null)
-    const [activePatientsRes] = await tx
-      .select({ count: count() })
-      .from(patients)
-      .where(isNull(patients.deletedAt));
-
-    // 3. Total & today's appointments
-    const [totalAppointmentsRes] = await tx
-      .select({ count: count() })
-      .from(appointments);
-
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const [todayApptsRes] = await tx
-      .select({ count: count() })
-      .from(appointments)
-      .where(
-        and(
-          gte(appointments.startAt, startOfToday),
-          lte(appointments.startAt, endOfToday)
-        )
-      );
+    // Parallelize all independent count and list queries
+    const [
+      pendingBookingsRes,
+      activePatientsRes,
+      totalAppointmentsRes,
+      todayApptsRes,
+      recentBookingRequests,
+      upcomingAppointments,
+    ] = await Promise.all([
+      // 1. Pending booking requests count
+      tx
+        .select({ count: count() })
+        .from(bookingRequests)
+        .where(eq(bookingRequests.status, 'pending')),
 
-    // Recent booking requests
-    const recentBookingRequests = await tx
-      .select({
-        id: bookingRequests.id,
-        reason: bookingRequests.reason,
-        requestedVia: bookingRequests.requestedVia,
-        status: bookingRequests.status,
-        requestedSlotStart: bookingRequests.requestedSlotStart,
-        patientName: patients.fullName,
-        patientPhone: patients.phone,
-      })
-      .from(bookingRequests)
-      .leftJoin(patients, eq(bookingRequests.patientId, patients.id))
-      .orderBy(desc(bookingRequests.createdAt))
-      .limit(4);
+      // 2. Active patients count (deleted_at is null)
+      tx
+        .select({ count: count() })
+        .from(patients)
+        .where(isNull(patients.deletedAt)),
 
-    // Upcoming appointments
-    const upcomingAppointments = await tx
-      .select({
-        id: appointments.id,
-        startAt: appointments.startAt,
-        status: appointments.status,
-        reason: appointments.reason,
-        patientName: patients.fullName,
-        dentistName: users.fullName,
-      })
-      .from(appointments)
-      .innerJoin(patients, eq(appointments.patientId, patients.id))
-      .innerJoin(users, eq(appointments.dentistId, users.id))
-      .orderBy(desc(appointments.startAt))
-      .limit(5);
+      // 3. Total appointments
+      tx
+        .select({ count: count() })
+        .from(appointments),
+
+      // 4. Today's appointments
+      tx
+        .select({ count: count() })
+        .from(appointments)
+        .where(
+          and(
+            gte(appointments.startAt, startOfToday),
+            lte(appointments.startAt, endOfToday)
+          )
+        ),
+
+      // 5. Recent booking requests
+      tx
+        .select({
+          id: bookingRequests.id,
+          reason: bookingRequests.reason,
+          requestedVia: bookingRequests.requestedVia,
+          status: bookingRequests.status,
+          requestedSlotStart: bookingRequests.requestedSlotStart,
+          patientName: patients.fullName,
+          patientPhone: patients.phone,
+        })
+        .from(bookingRequests)
+        .leftJoin(patients, eq(bookingRequests.patientId, patients.id))
+        .orderBy(desc(bookingRequests.createdAt))
+        .limit(4),
+
+      // 6. Upcoming appointments
+      tx
+        .select({
+          id: appointments.id,
+          startAt: appointments.startAt,
+          status: appointments.status,
+          reason: appointments.reason,
+          patientName: patients.fullName,
+          dentistName: users.fullName,
+        })
+        .from(appointments)
+        .innerJoin(patients, eq(appointments.patientId, patients.id))
+        .innerJoin(users, eq(appointments.dentistId, users.id))
+        .orderBy(desc(appointments.startAt))
+        .limit(5),
+    ]);
 
     return {
-      todayAppointmentsCount: Number(todayApptsRes?.count ?? 0),
-      pendingBookingsCount: Number(pendingBookingsRes?.count ?? 0),
-      activePatientsCount: Number(activePatientsRes?.count ?? 0),
-      totalAppointmentsCount: Number(totalAppointmentsRes?.count ?? 0),
+      todayAppointmentsCount: Number(todayApptsRes[0]?.count ?? 0),
+      pendingBookingsCount: Number(pendingBookingsRes[0]?.count ?? 0),
+      activePatientsCount: Number(activePatientsRes[0]?.count ?? 0),
+      totalAppointmentsCount: Number(totalAppointmentsRes[0]?.count ?? 0),
       recentBookingRequests,
       upcomingAppointments,
     };

@@ -28,7 +28,7 @@ const loginSchema = z.object({
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .max(12, 'Password cannot exceed 12 characters'),
+    .max(72, 'Password cannot exceed 72 characters'),
   clinic_id: z.string().uuid('Invalid clinic ID format'),
 });
 
@@ -65,6 +65,7 @@ export async function POST(req: Request) {
     }
 
     const normalizedLogin = loginValue.toLowerCase();
+    const normalizedEmail = (email || loginValue).toLowerCase();
 
     // Rate limiting: 5 failed attempts per identifier per 15 min
     const rateCheck = await checkPatientLoginRateLimit(normalizedLogin);

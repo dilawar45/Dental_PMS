@@ -95,8 +95,7 @@ function LoginForm() {
             ? '/platform/dashboard'
             : redirectTo;
 
-        router.refresh();
-        router.push(target);
+        window.location.assign(target);
       }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');

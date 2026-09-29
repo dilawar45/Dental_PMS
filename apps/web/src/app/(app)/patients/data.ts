@@ -141,34 +141,34 @@ export async function getPatients(
         break;
     }
 
-    // 2. Count total matching rows
-    const [countResult] = await tx
-      .select({ count: sql<number>`count(*)::int` })
-      .from(patients)
-      .where(finalWhere);
+    // 2. Query total count and paginated rows concurrently
+    const [countResult, rows] = await Promise.all([
+      tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(patients)
+        .where(finalWhere),
+      tx
+        .select({
+          id: patients.id,
+          fullName: patients.fullName,
+          phone: patients.phone,
+          email: patients.email,
+          dob: patients.dob,
+          gender: patients.gender,
+          deletedAt: patients.deletedAt,
+          createdAt: patients.createdAt,
+          totalVisits: totalVisitsSql,
+          lastVisitDate: lastVisitSql,
+          hasUpcoming: hasUpcomingSql,
+        })
+        .from(patients)
+        .where(finalWhere)
+        .orderBy(orderBySql)
+        .limit(pageSize)
+        .offset(offset),
+    ]);
 
-    const totalCount = countResult?.count ?? 0;
-
-    // 3. Query paginated rows
-    const rows = await tx
-      .select({
-        id: patients.id,
-        fullName: patients.fullName,
-        phone: patients.phone,
-        email: patients.email,
-        dob: patients.dob,
-        gender: patients.gender,
-        deletedAt: patients.deletedAt,
-        createdAt: patients.createdAt,
-        totalVisits: totalVisitsSql,
-        lastVisitDate: lastVisitSql,
-        hasUpcoming: hasUpcomingSql,
-      })
-      .from(patients)
-      .where(finalWhere)
-      .orderBy(orderBySql)
-      .limit(pageSize)
-      .offset(offset);
+    const totalCount = countResult[0]?.count ?? 0;
 
     // Compute age in application layer
     const items: PatientListItem[] = rows.map((r) => {

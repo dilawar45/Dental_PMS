@@ -1,5 +1,11 @@
+import * as React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
+
+type AnyFn = (...args: any[]) => any;
+const cache: <T extends AnyFn>(fn: T) => T =
+  (React as unknown as { cache?: <T extends AnyFn>(fn: T) => T }).cache ||
+  ((fn) => fn);
 import { users, clinics } from '@dental-pms/db/schema';
 import type { User, UserRole } from '@dental-pms/types';
 import { eq, and } from 'drizzle-orm';
@@ -50,8 +56,9 @@ export function getClinicDbOptions(context: CurrentUserContext): SupportModeOpti
 /**
  * Reads the Supabase session, retrieves the matching profile from public.users,
  * evaluates Support Mode if applicable, and returns the active user context.
+ * Memoized per server request with React cache to prevent redundant auth & DB roundtrips.
  */
-export async function getCurrentUser(): Promise<CurrentUserContext | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUserContext | null> => {
   const supabase = await createClient();
   const {
     data: { user: authUser },
@@ -146,7 +153,7 @@ export async function getCurrentUser(): Promise<CurrentUserContext | null> {
     realUser: profile,
     isSupportMode: false,
   };
-}
+});
 
 /**
  * Server-side route guard for clinic-scoped routes (/(app)/*).
@@ -171,37 +178,18 @@ export async function requireUser(): Promise<CurrentUserContext> {
  * Throws 403 AuthorizationError if caller is not a super_admin.
  */
 export async function requireSuperAdmin(): Promise<CurrentUserContext> {
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !authUser) {
+  const context = await getCurrentUser();
+  if (!context) {
     redirect('/login');
   }
 
-  const [profile] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, authUser.id));
-
-  if (!profile || !profile.active) {
-    redirect('/login');
-  }
-
-  if (profile.role !== 'super_admin' || !profile.isSuperAdmin) {
+  if (context.user.role !== 'super_admin' || !context.user.isSuperAdmin) {
     throw new AuthorizationError(
-      `Access Denied: Role '${profile.role}' is not authorized to access platform administration.`
+      `Access Denied: Role '${context.user.role}' is not authorized to access platform administration.`
     );
   }
 
-  return {
-    user: { ...profile, clinicId: '' },
-    clinicId: '',
-    realUser: profile,
-    isSupportMode: false,
-  };
+  return context;
 }
 
 export async function requireRole(allowedRoles: UserRole[]): Promise<CurrentUserContext> {

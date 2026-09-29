@@ -57,21 +57,74 @@ export default async function PatientDetailPage({
       return null;
     }
 
-    // 2. Fetch appointments joined with dentist
-    const aptRows = await tx
-      .select({
-        id: appointments.id,
-        startAt: appointments.startAt,
-        endAt: appointments.endAt,
-        status: appointments.status,
-        reason: appointments.reason,
-        notes: appointments.notes,
-        dentistName: users.fullName,
-      })
-      .from(appointments)
-      .leftJoin(users, eq(appointments.dentistId, users.id))
-      .where(and(eq(appointments.patientId, patientId), eq(appointments.clinicId, user.clinicId)))
-      .orderBy(desc(appointments.startAt));
+    // 2-6. Fetch appointments, treatments, files, consents, and audit logs concurrently
+    const [aptRows, treatmentRows, fileRows, consentRows, auditRows] = await Promise.all([
+      tx
+        .select({
+          id: appointments.id,
+          startAt: appointments.startAt,
+          endAt: appointments.endAt,
+          status: appointments.status,
+          reason: appointments.reason,
+          notes: appointments.notes,
+          dentistName: users.fullName,
+        })
+        .from(appointments)
+        .leftJoin(users, eq(appointments.dentistId, users.id))
+        .where(and(eq(appointments.patientId, patientId), eq(appointments.clinicId, user.clinicId)))
+        .orderBy(desc(appointments.startAt)),
+
+      tx
+        .select()
+        .from(treatments)
+        .where(and(eq(treatments.patientId, patientId), eq(treatments.clinicId, user.clinicId)))
+        .orderBy(desc(treatments.createdAt)),
+
+      tx
+        .select({
+          id: files.id,
+          kind: files.kind,
+          storageKey: files.storageKey,
+          mime: files.mime,
+          size: files.size,
+          uploadedAt: files.uploadedAt,
+          uploaderName: users.fullName,
+        })
+        .from(files)
+        .leftJoin(users, eq(files.uploadedBy, users.id))
+        .where(and(eq(files.patientId, patientId), eq(files.clinicId, user.clinicId)))
+        .orderBy(desc(files.uploadedAt)),
+
+      tx
+        .select()
+        .from(consents)
+        .where(and(eq(consents.patientId, patientId), eq(consents.clinicId, user.clinicId)))
+        .orderBy(desc(consents.grantedAt)),
+
+      tx
+        .select({
+          id: auditLog.id,
+          action: auditLog.action,
+          entity: auditLog.entity,
+          entityId: auditLog.entityId,
+          at: auditLog.at,
+          meta: auditLog.meta,
+          actorName: users.fullName,
+        })
+        .from(auditLog)
+        .leftJoin(users, eq(auditLog.actorId, users.id))
+        .where(
+          and(
+            eq(auditLog.clinicId, user.clinicId),
+            or(
+              and(eq(auditLog.entity, 'patient'), eq(auditLog.entityId, patientId)),
+              and(eq(auditLog.entity, 'consent'), eq(auditLog.entityId, patientId)),
+              and(eq(auditLog.entity, 'file'), eq(auditLog.entityId, patientId))
+            )
+          )
+        )
+        .orderBy(desc(auditLog.at)),
+    ]);
 
     const patientAppointments: PatientAppointmentItem[] = aptRows.map((a) => ({
       id: a.id,
@@ -83,29 +136,6 @@ export default async function PatientDetailPage({
       dentistName: a.dentistName || 'Attending Dentist',
     }));
 
-    // 3. Fetch treatments
-    const treatmentRows = await tx
-      .select()
-      .from(treatments)
-      .where(and(eq(treatments.patientId, patientId), eq(treatments.clinicId, user.clinicId)))
-      .orderBy(desc(treatments.createdAt));
-
-    // 4. Fetch files
-    const fileRows = await tx
-      .select({
-        id: files.id,
-        kind: files.kind,
-        storageKey: files.storageKey,
-        mime: files.mime,
-        size: files.size,
-        uploadedAt: files.uploadedAt,
-        uploaderName: users.fullName,
-      })
-      .from(files)
-      .leftJoin(users, eq(files.uploadedBy, users.id))
-      .where(and(eq(files.patientId, patientId), eq(files.clinicId, user.clinicId)))
-      .orderBy(desc(files.uploadedAt));
-
     const patientFiles: PatientFileItem[] = fileRows.map((f) => ({
       id: f.id,
       kind: f.kind,
@@ -115,38 +145,6 @@ export default async function PatientDetailPage({
       uploadedAt: f.uploadedAt.toISOString(),
       uploaderName: f.uploaderName,
     }));
-
-    // 5. Fetch consents
-    const consentRows = await tx
-      .select()
-      .from(consents)
-      .where(and(eq(consents.patientId, patientId), eq(consents.clinicId, user.clinicId)))
-      .orderBy(desc(consents.grantedAt));
-
-    // 6. Fetch audit logs
-    const auditRows = await tx
-      .select({
-        id: auditLog.id,
-        action: auditLog.action,
-        entity: auditLog.entity,
-        entityId: auditLog.entityId,
-        at: auditLog.at,
-        meta: auditLog.meta,
-        actorName: users.fullName,
-      })
-      .from(auditLog)
-      .leftJoin(users, eq(auditLog.actorId, users.id))
-      .where(
-        and(
-          eq(auditLog.clinicId, user.clinicId),
-          or(
-            and(eq(auditLog.entity, 'patient'), eq(auditLog.entityId, patientId)),
-            and(eq(auditLog.entity, 'consent'), eq(auditLog.entityId, patientId)),
-            and(eq(auditLog.entity, 'file'), eq(auditLog.entityId, patientId))
-          )
-        )
-      )
-      .orderBy(desc(auditLog.at));
 
     const patientAuditLogs: PatientAuditItem[] = auditRows.map((a) => ({
       id: a.id,

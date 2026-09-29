@@ -42,23 +42,6 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
     db,
     user.clinicId,
     async (tx: ClinicTransaction) => {
-      // 1. Fetch authorized practitioners for filter dropdown
-      const practitioners = await tx
-        .select({
-          id: users.id,
-          fullName: users.fullName,
-          role: users.role,
-        })
-        .from(users)
-        .where(
-          and(
-            eq(users.clinicId, user.clinicId),
-            inArray(users.role, ['dentist', 'owner']),
-            eq(users.active, true)
-          )
-        );
-
-      // 2. Query appointments in the active date window
       const queryConditions = [
         eq(appointments.clinicId, user.clinicId),
         gte(appointments.startAt, startDate),
@@ -73,23 +56,40 @@ export default async function AppointmentsPage({ searchParams }: AppointmentsPag
         queryConditions.push(eq(appointments.status, selectedStatus));
       }
 
-      const rows = await tx
-        .select({
-          id: appointments.id,
-          patientId: appointments.patientId,
-          patientName: patients.fullName,
-          dentistId: appointments.dentistId,
-          dentistName: users.fullName,
-          startAt: appointments.startAt,
-          endAt: appointments.endAt,
-          status: appointments.status,
-          reason: appointments.reason,
-        })
-        .from(appointments)
-        .innerJoin(patients, eq(appointments.patientId, patients.id))
-        .innerJoin(users, eq(appointments.dentistId, users.id))
-        .where(and(...queryConditions))
-        .orderBy(appointments.startAt);
+      // Fetch practitioners and appointments concurrently
+      const [practitioners, rows] = await Promise.all([
+        tx
+          .select({
+            id: users.id,
+            fullName: users.fullName,
+            role: users.role,
+          })
+          .from(users)
+          .where(
+            and(
+              eq(users.clinicId, user.clinicId),
+              inArray(users.role, ['dentist', 'owner']),
+              eq(users.active, true)
+            )
+          ),
+        tx
+          .select({
+            id: appointments.id,
+            patientId: appointments.patientId,
+            patientName: patients.fullName,
+            dentistId: appointments.dentistId,
+            dentistName: users.fullName,
+            startAt: appointments.startAt,
+            endAt: appointments.endAt,
+            status: appointments.status,
+            reason: appointments.reason,
+          })
+          .from(appointments)
+          .innerJoin(patients, eq(appointments.patientId, patients.id))
+          .innerJoin(users, eq(appointments.dentistId, users.id))
+          .where(and(...queryConditions))
+          .orderBy(appointments.startAt),
+      ]);
 
       const items: CalendarAppointmentItem[] = rows.map((r) => ({
         id: r.id,

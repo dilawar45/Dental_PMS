@@ -35,7 +35,34 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Refresh auth token safely
+  const isLoginPage = request.nextUrl.pathname === '/login';
+  const isAuthCallback = request.nextUrl.pathname.startsWith('/auth');
+  const isInvitePage = request.nextUrl.pathname.startsWith('/invite');
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
+  const isPublicRoute = isLoginPage || isAuthCallback || isInvitePage || isApiRoute;
+
+  // Fast check: check if any Supabase auth cookies exist
+  const allCookies = request.cookies.getAll();
+  const hasAuthCookie = allCookies.some(
+    (c) => c.name.startsWith('sb-') && c.name.includes('-auth-token')
+  );
+
+  // If there are no auth cookies at all:
+  // - On protected routes, immediately redirect to /login without network delay
+  // - On public routes, immediately return without blocking on remote auth
+  if (!hasAuthCookie) {
+    if (!isPublicRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      if (request.nextUrl.pathname !== '/') {
+        url.searchParams.set('redirectTo', request.nextUrl.pathname);
+      }
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // Refresh auth token safely only when auth cookies are present
   let user = null;
   try {
     const {
@@ -45,12 +72,6 @@ export async function updateSession(request: NextRequest) {
   } catch {
     user = null;
   }
-
-  const isLoginPage = request.nextUrl.pathname === '/login';
-  const isAuthCallback = request.nextUrl.pathname.startsWith('/auth');
-  const isInvitePage = request.nextUrl.pathname.startsWith('/invite');
-  const isApiRoute = request.nextUrl.pathname.startsWith('/api');
-  const isPublicRoute = isLoginPage || isAuthCallback || isInvitePage || isApiRoute;
 
   // Unauthenticated users trying to access protected routes -> redirect to /login
   if (!user && !isPublicRoute) {
