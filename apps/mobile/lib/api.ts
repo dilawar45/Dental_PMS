@@ -248,6 +248,16 @@ export interface Invoice {
   receipts?: InvoiceReceipt[];
 }
 
+export interface PatientFile {
+  id: string;
+  kind: 'xray' | 'photo' | 'document' | 'receipt';
+  mime: string;
+  size: number;
+  uploaded_at: string;
+  uploader_name: string;
+  url: string | null;
+}
+
 export interface ReceiptDetails {
   id: string;
   receipt_number: string;
@@ -576,4 +586,24 @@ export const patientApi = {
 
   unregisterDevice: (deviceId: string) =>
     api.delete<{ success: boolean; message?: string }>(`/api/patient/devices/${deviceId}`),
+
+  getFiles: async (): Promise<{ files: PatientFile[] }> => {
+    return api.get<{ files: PatientFile[] }>('/api/patient/files');
+  },
+
+  uploadFile: async (formData: FormData): Promise<{ success: boolean; file?: PatientFile }> => {
+    const token = useAuthStore.getState().token;
+    const response = await fetch(`${API_BASE_URL}/api/patient/files`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to upload photo');
+    }
+    return response.json();
+  },
 };

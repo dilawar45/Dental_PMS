@@ -98,7 +98,7 @@ export function AuditFilters({ staffUsers }: AuditFiltersProps) {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search action or entity ID..."
+            placeholder="Search action or user..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-8 py-2 text-xs md:text-sm rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
@@ -126,7 +126,7 @@ export function AuditFilters({ staffUsers }: AuditFiltersProps) {
               aria-label="Filter by actor"
               className="appearance-none pl-8 pr-8 py-2 text-xs font-medium rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer"
             >
-              <option value="all">All Actors</option>
+              <option value="all">All Users / Actors</option>
               {staffUsers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} ({s.role})
@@ -134,23 +134,6 @@ export function AuditFilters({ staffUsers }: AuditFiltersProps) {
               ))}
             </select>
             <User className="absolute left-2.5 pointer-events-none h-3.5 w-3.5 text-slate-400" />
-          </div>
-
-          {/* Entity Type Filter */}
-          <div className="relative inline-flex items-center">
-            <select
-              value={currentEntity}
-              onChange={(e) => updateFilters({ entity: e.target.value })}
-              aria-label="Filter by entity type"
-              className="appearance-none pl-8 pr-8 py-2 text-xs font-medium rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer"
-            >
-              {ENTITY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <Layers className="absolute left-2.5 pointer-events-none h-3.5 w-3.5 text-slate-400" />
           </div>
 
           {/* Date Filter Toggle */}

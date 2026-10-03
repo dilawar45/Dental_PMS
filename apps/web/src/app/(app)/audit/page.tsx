@@ -31,7 +31,7 @@ export default async function AuditLogPage({ searchParams }: AuditPageProps) {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                Audit Log Viewer
+                System Logs
               </h1>
               <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                 <Lock className="w-3 h-3" />
@@ -39,7 +39,7 @@ export default async function AuditLogPage({ searchParams }: AuditPageProps) {
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              Complete, tamper-evident chronological record of all clinical, administrative, and billing transactions.
+              Activity log of clinical, administrative, and mobile patient operations across the clinic.
             </p>
           </div>
         </div>

@@ -65,7 +65,7 @@ export const SETTINGS_NAV_ITEMS: NavItem[] = [
     roles: ['owner'],
   },
   {
-    title: 'Audit Log',
+    title: 'System Logs',
     href: '/audit',
     icon: ScrollText,
     roles: ['owner'],

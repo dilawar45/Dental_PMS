@@ -7,10 +7,9 @@ import {
   treatments,
   files,
   consents,
-  auditLog,
   users,
 } from '@dental-pms/db/schema';
-import { eq, desc, and, or } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,12 +17,12 @@ import {
   Calendar,
   Stethoscope,
   Activity,
-  HardDrive,
+  Image as ImageIcon,
   ShieldCheck,
-  History,
   User,
   CheckCircle2,
 } from 'lucide-react';
+import { getStorageProvider } from '@dental-pms/integrations/storage';
 
 import { OverviewTab } from './tabs/overview-tab';
 import { AppointmentsTab, type PatientAppointmentItem } from './tabs/appointments-tab';
@@ -31,7 +30,6 @@ import { TreatmentsTab } from './tabs/treatments-tab';
 import { ChartTab } from './tabs/chart-tab';
 import { FilesTab, type PatientFileItem } from './tabs/files-tab';
 import { ConsentsTab } from './tabs/consents-tab';
-import { AuditTab, type PatientAuditItem } from './tabs/audit-tab';
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -57,8 +55,8 @@ export default async function PatientDetailPage({
       return null;
     }
 
-    // 2-6. Fetch appointments, treatments, files, consents, and audit logs concurrently
-    const [aptRows, treatmentRows, fileRows, consentRows, auditRows] = await Promise.all([
+    // 2-5. Fetch appointments, treatments, files, and consents concurrently
+    const [aptRows, treatmentRows, fileRows, consentRows] = await Promise.all([
       tx
         .select({
           id: appointments.id,
@@ -100,30 +98,6 @@ export default async function PatientDetailPage({
         .from(consents)
         .where(and(eq(consents.patientId, patientId), eq(consents.clinicId, user.clinicId)))
         .orderBy(desc(consents.grantedAt)),
-
-      tx
-        .select({
-          id: auditLog.id,
-          action: auditLog.action,
-          entity: auditLog.entity,
-          entityId: auditLog.entityId,
-          at: auditLog.at,
-          meta: auditLog.meta,
-          actorName: users.fullName,
-        })
-        .from(auditLog)
-        .leftJoin(users, eq(auditLog.actorId, users.id))
-        .where(
-          and(
-            eq(auditLog.clinicId, user.clinicId),
-            or(
-              and(eq(auditLog.entity, 'patient'), eq(auditLog.entityId, patientId)),
-              and(eq(auditLog.entity, 'consent'), eq(auditLog.entityId, patientId)),
-              and(eq(auditLog.entity, 'file'), eq(auditLog.entityId, patientId))
-            )
-          )
-        )
-        .orderBy(desc(auditLog.at)),
     ]);
 
     const patientAppointments: PatientAppointmentItem[] = aptRows.map((a) => ({
@@ -136,24 +110,30 @@ export default async function PatientDetailPage({
       dentistName: a.dentistName || 'Attending Dentist',
     }));
 
-    const patientFiles: PatientFileItem[] = fileRows.map((f) => ({
-      id: f.id,
-      kind: f.kind,
-      storageKey: f.storageKey,
-      mime: f.mime,
-      size: f.size,
-      uploadedAt: f.uploadedAt.toISOString(),
-      uploaderName: f.uploaderName,
-    }));
+    // Generate signed URLs for file previews & downloads
+    const storage = getStorageProvider(db);
+    const patientFiles: PatientFileItem[] = await Promise.all(
+      fileRows.map(async (f) => {
+        let url: string | null = null;
+        try {
+          const res = await storage.getSignedUrl('patient-files', f.storageKey, 3600);
+          url = res.url;
+        } catch {
+          url = null;
+        }
 
-    const patientAuditLogs: PatientAuditItem[] = auditRows.map((a) => ({
-      id: a.id,
-      action: a.action,
-      entity: a.entity,
-      actorName: a.actorName,
-      at: a.at.toISOString(),
-      meta: a.meta as Record<string, unknown> | null,
-    }));
+        return {
+          id: f.id,
+          kind: f.kind,
+          storageKey: f.storageKey,
+          mime: f.mime,
+          size: f.size,
+          uploadedAt: f.uploadedAt.toISOString(),
+          uploaderName: f.uploaderName || 'Staff Member',
+          url,
+        };
+      })
+    );
 
     return {
       patient: patientRow,
@@ -161,7 +141,6 @@ export default async function PatientDetailPage({
       treatments: treatmentRows,
       files: patientFiles,
       consents: consentRows,
-      auditLogs: patientAuditLogs,
     };
   });
 
@@ -169,7 +148,7 @@ export default async function PatientDetailPage({
     notFound();
   }
 
-  const { patient, appointments: apts, treatments: trts, files: fls, consents: csnts, auditLogs: auds } =
+  const { patient, appointments: apts, treatments: trts, files: fls, consents: csnts } =
     data;
 
   const tabs = [
@@ -177,9 +156,8 @@ export default async function PatientDetailPage({
     { id: 'appointments', label: 'Appointments', icon: Calendar, count: apts.length },
     { id: 'treatments', label: 'Treatments', icon: Stethoscope, count: trts.length },
     { id: 'chart', label: 'Dental Chart', icon: Activity, count: null },
-    { id: 'files', label: 'Files', icon: HardDrive, count: fls.length },
+    { id: 'files', label: 'Images & X-Rays', icon: ImageIcon, count: fls.length },
     { id: 'consents', label: 'Consents', icon: ShieldCheck, count: csnts.filter((c) => !c.revokedAt).length },
-    { id: 'audit', label: 'Audit Trail', icon: History, count: auds.length },
   ];
 
   return (
@@ -265,6 +243,7 @@ export default async function PatientDetailPage({
           />
         )}
         {tab === 'appointments' && <AppointmentsTab appointments={apts} />}
+        {tab === 'treatments' && <TreatmentsTab treatments={trts} />}
         {tab === 'chart' && (
           <ChartTab
             patientId={patient.id}
@@ -274,10 +253,10 @@ export default async function PatientDetailPage({
             clinicId={user.clinicId}
           />
         )}
+        {tab === 'files' && <FilesTab patientId={patient.id} files={fls} />}
         {tab === 'consents' && (
           <ConsentsTab patientId={patient.id} consents={csnts} />
         )}
-        {tab === 'audit' && <AuditTab auditLogs={auds} />}
       </div>
     </div>
   );

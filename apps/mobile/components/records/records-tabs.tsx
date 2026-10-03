@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Stethoscope, Grid3X3, Receipt } from 'lucide-react-native';
+import { Stethoscope, Grid3X3, Receipt, Camera } from 'lucide-react-native';
 
-export type RecordsTabType = 'treatments' | 'chart' | 'invoices';
+export type RecordsTabType = 'treatments' | 'chart' | 'invoices' | 'files';
 
 interface RecordsTabsProps {
   activeTab: RecordsTabType;
@@ -10,6 +10,7 @@ interface RecordsTabsProps {
   counts?: {
     treatments?: number;
     invoices?: number;
+    files?: number;
   };
 }
 
@@ -32,7 +33,7 @@ export function RecordsTabs({
     },
     {
       id: 'chart',
-      label: 'Dental Chart',
+      label: 'Chart',
       icon: Grid3X3,
     },
     {
@@ -40,6 +41,12 @@ export function RecordsTabs({
       label: 'Invoices',
       icon: Receipt,
       count: counts?.invoices,
+    },
+    {
+      id: 'files',
+      label: 'X-Rays',
+      icon: Camera,
+      count: counts?.files,
     },
   ];
 

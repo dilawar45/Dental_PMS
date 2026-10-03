@@ -6,6 +6,9 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
+  Modal,
+  Linking,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -19,10 +22,15 @@ import {
   Stethoscope,
   Smile,
   CreditCard,
+  Camera,
+  Download,
+  Eye,
+  X,
+  Image as ImageIcon,
 } from 'lucide-react-native';
 import { Screen } from '../../components/ui/screen';
 import { Button } from '../../components/ui/button';
-import { patientApi, formatPKR } from '../../lib/api';
+import { patientApi, formatPKR, formatLocalDate, PatientFile } from '../../lib/api';
 import {
   RecordsTabs,
   RecordsTabType,
@@ -34,13 +42,15 @@ import { InvoiceCard } from '../../components/records/invoice-card';
 export default function RecordsScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const [activeTab, setActiveTab] = useState<RecordsTabType>('treatments');
+  const [selectedPreviewFile, setSelectedPreviewFile] = useState<PatientFile | null>(null);
 
   useEffect(() => {
     if (
       params.tab &&
       (params.tab === 'treatments' ||
         params.tab === 'chart' ||
-        params.tab === 'invoices')
+        params.tab === 'invoices' ||
+        params.tab === 'files')
     ) {
       setActiveTab(params.tab as RecordsTabType);
     }
@@ -85,17 +95,32 @@ export default function RecordsScreen() {
     queryFn: patientApi.getInvoices,
   });
 
+  // 4. Files / X-Rays Query
+  const {
+    data: filesData,
+    isLoading: isLoadingFiles,
+    isError: isErrorFiles,
+    error: filesError,
+    refetch: refetchFiles,
+    isRefetching: isRefetchingFiles,
+  } = useQuery({
+    queryKey: ['patient-files'],
+    queryFn: patientApi.getFiles,
+  });
+
   const treatments = treatmentsData?.treatments || [];
   const teeth = chartData?.teeth || {};
   const invoices = invoicesData?.invoices || [];
+  const files = filesData?.files || [];
 
   const isRefreshing =
-    isRefetchingTreatments || isRefetchingChart || isRefetchingInvoices;
+    isRefetchingTreatments || isRefetchingChart || isRefetchingInvoices || isRefetchingFiles;
 
   const handleRefreshAll = () => {
     if (activeTab === 'treatments') refetchTreatments();
     else if (activeTab === 'chart') refetchChart();
     else if (activeTab === 'invoices') refetchInvoices();
+    else if (activeTab === 'files') refetchFiles();
   };
 
   // Calculations for summaries
@@ -149,6 +174,7 @@ export default function RecordsScreen() {
           counts={{
             treatments: treatments.length,
             invoices: invoices.length,
+            files: files.length,
           }}
         />
 
@@ -514,7 +540,395 @@ export default function RecordsScreen() {
             )}
           </View>
         )}
+
+        {/* Sub-tab 4: X-Rays & Photos */}
+        {activeTab === 'files' && (
+          <View>
+            {isLoadingFiles ? (
+              <View
+                style={{
+                  paddingVertical: 48,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ActivityIndicator size="large" color="#059669" />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: '#64748b',
+                    marginTop: 12,
+                    fontWeight: '500',
+                  }}
+                >
+                  Loading X-rays and clinical photos...
+                </Text>
+              </View>
+            ) : isErrorFiles ? (
+              <View
+                style={{
+                  backgroundColor: '#fef2f2',
+                  borderWidth: 1,
+                  borderColor: '#fecaca',
+                  borderRadius: 16,
+                  padding: 20,
+                  alignItems: 'center',
+                  marginVertical: 16,
+                }}
+              >
+                <AlertCircle size={32} color="#dc2626" />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '700',
+                    color: '#7f1d1d',
+                    marginTop: 8,
+                  }}
+                >
+                  Failed to load photos
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: '#991b1b',
+                    textAlign: 'center',
+                    marginTop: 4,
+                    marginBottom: 16,
+                  }}
+                >
+                  {(filesError as Error)?.message || 'Could not retrieve media assets.'}
+                </Text>
+                <Button variant="outline" size="sm" onPress={() => refetchFiles()}>
+                  <RefreshCw size={14} color="#0f172a" style={{ marginRight: 6 }} />
+                  Retry
+                </Button>
+              </View>
+            ) : files.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  borderColor: '#e2e8f0',
+                  padding: 32,
+                  alignItems: 'center',
+                  marginVertical: 8,
+                }}
+              >
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: '#f1f5f9',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                  }}
+                >
+                  <Camera size={30} color="#94a3b8" />
+                </View>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: '700',
+                    color: '#0f172a',
+                    marginBottom: 4,
+                  }}
+                >
+                  No X-rays or photos yet
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: '#64748b',
+                    textAlign: 'center',
+                    lineHeight: 18,
+                    marginBottom: 20,
+                    maxWidth: 280,
+                  }}
+                >
+                  Radiographs (OPG, bitewings) and clinical treatment photos uploaded by your doctor will appear here.
+                </Text>
+                <Button
+                  variant="primary"
+                  onPress={() => router.push('/(tabs)/doctors')}
+                >
+                  Book Consultation
+                </Button>
+              </View>
+            ) : (
+              <View style={{ gap: 12 }}>
+                {files.map((file) => {
+                  const isImage = file.mime.startsWith('image/');
+                  const kindColor =
+                    file.kind === 'xray'
+                      ? { bg: '#ecfdf5', text: '#059669', border: '#a7f3d0', label: 'X-Ray' }
+                      : file.kind === 'photo'
+                      ? { bg: '#f0f9ff', text: '#0284c7', border: '#bae6fd', label: 'Photo' }
+                      : { bg: '#f8fafc', text: '#475569', border: '#cbd5e1', label: 'Document' };
+
+                  return (
+                    <View
+                      key={file.id}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: 18,
+                        borderWidth: 1,
+                        borderColor: '#e2e8f0',
+                        padding: 14,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 14,
+                      }}
+                    >
+                      {/* Image Thumbnail */}
+                      <TouchableOpacity
+                        onPress={() => setSelectedPreviewFile(file)}
+                        activeOpacity={0.85}
+                        style={{
+                          width: 76,
+                          height: 76,
+                          borderRadius: 14,
+                          overflow: 'hidden',
+                          backgroundColor: '#0f172a',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderWidth: 1,
+                          borderColor: '#e2e8f0',
+                        }}
+                      >
+                        {isImage && file.url ? (
+                          <Image
+                            source={{ uri: file.url }}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <FileText size={28} color="#94a3b8" />
+                        )}
+                      </TouchableOpacity>
+
+                      {/* Info & Actions */}
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <View
+                            style={{
+                              backgroundColor: kindColor.bg,
+                              borderColor: kindColor.border,
+                              borderWidth: 1,
+                              borderRadius: 6,
+                              paddingHorizontal: 6,
+                              paddingVertical: 2,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 10,
+                                fontWeight: '700',
+                                color: kindColor.text,
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {kindColor.label}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 11, color: '#94a3b8' }}>
+                            {formatLocalDate(file.uploaded_at)}
+                          </Text>
+                        </View>
+
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            fontSize: 13,
+                            fontWeight: '600',
+                            color: '#0f172a',
+                            marginBottom: 2,
+                          }}
+                        >
+                          {file.uploader_name || 'Clinic Team'}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: '#64748b' }}>
+                          {(file.size / (1024 * 1024)).toFixed(1)} MB • High Resolution
+                        </Text>
+
+                        {/* Actions Row */}
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                          <TouchableOpacity
+                            onPress={() => setSelectedPreviewFile(file)}
+                            style={{
+                              backgroundColor: '#f1f5f9',
+                              borderRadius: 8,
+                              paddingHorizontal: 10,
+                              paddingVertical: 5,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <Eye size={12} color="#0f172a" />
+                            <Text style={{ fontSize: 11, fontWeight: '600', color: '#0f172a' }}>
+                              View
+                            </Text>
+                          </TouchableOpacity>
+
+                          {file.url && (
+                            <TouchableOpacity
+                              onPress={() => Linking.openURL(file.url!)}
+                              style={{
+                                backgroundColor: '#ecfdf5',
+                                borderRadius: 8,
+                                paddingHorizontal: 10,
+                                paddingVertical: 5,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <Download size={12} color="#059669" />
+                              <Text style={{ fontSize: 11, fontWeight: '600', color: '#059669' }}>
+                                Download
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
+
+      {/* Full-screen Photo / X-Ray Viewer Modal */}
+      {selectedPreviewFile && (
+        <Modal
+          visible={true}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setSelectedPreviewFile(null)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.92)',
+              justifyContent: 'center',
+              padding: 16,
+            }}
+          >
+            {/* Modal Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}>
+                  {selectedPreviewFile.kind.toUpperCase()} Radiograph / Photo
+                </Text>
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                  {formatLocalDate(selectedPreviewFile.uploaded_at)} • {selectedPreviewFile.uploader_name}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSelectedPreviewFile(null)}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={20} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* High-res Image Preview */}
+            <View
+              style={{
+                borderRadius: 16,
+                overflow: 'hidden',
+                backgroundColor: '#020617',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: 380,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.1)',
+              }}
+            >
+              {selectedPreviewFile.mime.startsWith('image/') && selectedPreviewFile.url ? (
+                <Image
+                  source={{ uri: selectedPreviewFile.url }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={{ alignItems: 'center' }}>
+                  <FileText size={48} color="#94a3b8" />
+                  <Text style={{ color: '#ffffff', marginTop: 12, fontSize: 14 }}>
+                    PDF / Clinical Report
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Actions Footer */}
+            <View
+              style={{
+                marginTop: 20,
+                flexDirection: 'row',
+                gap: 12,
+                justifyContent: 'center',
+              }}
+            >
+              {selectedPreviewFile.url && (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(selectedPreviewFile.url!)}
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#059669',
+                    borderRadius: 14,
+                    paddingVertical: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Download size={18} color="#ffffff" />
+                  <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 14 }}>
+                    Download / Save Image
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                onPress={() => setSelectedPreviewFile(null)}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  borderRadius: 14,
+                  paddingHorizontal: 20,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#ffffff', fontWeight: '600', fontSize: 14 }}>
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Screen>
   );
 }
