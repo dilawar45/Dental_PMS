@@ -46,10 +46,9 @@ function assertUuid(value: string, name: string): void {
  */
 export function getDefaultDb(): Database {
   if (!defaultDb) {
-    const url = process.env['DATABASE_URL'];
-    if (!url) {
-      throw new Error('DATABASE_URL environment variable is required');
-    }
+    const url =
+      process.env['DATABASE_URL'] ||
+      'postgresql://postgres:postgres@localhost:5432/postgres';
     defaultDb = createDb(url);
   }
   return defaultDb;
