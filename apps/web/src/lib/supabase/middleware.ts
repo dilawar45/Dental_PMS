@@ -1,6 +1,39 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+function getAuthTokenExpiry(request: NextRequest): number | null {
+  try {
+    const allCookies = request.cookies.getAll();
+    const tokenCookies = allCookies
+      .filter((c) => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (tokenCookies.length === 0) return null;
+
+    let rawVal = tokenCookies.map((c) => c.value).join('');
+    if (rawVal.startsWith('base64-')) {
+      rawVal = Buffer.from(rawVal.slice(7), 'base64').toString('utf-8');
+    }
+
+    const parsed = JSON.parse(rawVal);
+    if (typeof parsed?.expires_at === 'number') {
+      return parsed.expires_at * 1000;
+    }
+    if (typeof parsed?.access_token === 'string') {
+      const parts = parsed.access_token.split('.');
+      if (parts[1]) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf-8'));
+        if (typeof payload?.exp === 'number') {
+          return payload.exp * 1000;
+        }
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 /**
  * Middleware session refresher and route protector.
  * Refreshes auth tokens stored in cookies and enforces login redirects.
@@ -62,7 +95,22 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Refresh auth token safely only when auth cookies are present
+  // Fast path: If the active auth token in cookie is fresh (> 60s remaining),
+  // skip remote Supabase HTTP call and proceed instantly!
+  const tokenExpiry = getAuthTokenExpiry(request);
+  const now = Date.now();
+  const isTokenFresh = tokenExpiry !== null && tokenExpiry > now + 60_000;
+
+  if (isTokenFresh) {
+    if (request.nextUrl.pathname === '/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // Refresh auth token safely only when auth cookies are expiring or need renewal
   let user = null;
   try {
     const {

@@ -53,6 +53,12 @@ export function getClinicDbOptions(context: CurrentUserContext): SupportModeOpti
   };
 }
 
+const profileCache = new Map<string, { profile: typeof users.$inferSelect; expiresAt: number }>();
+
+export function invalidateUserProfile(userId: string): void {
+  profileCache.delete(userId);
+}
+
 /**
  * Reads the Supabase session, retrieves the matching profile from public.users,
  * evaluates Support Mode if applicable, and returns the active user context.
@@ -69,10 +75,20 @@ export const getCurrentUser = cache(async (): Promise<CurrentUserContext | null>
     return null;
   }
 
-  const [profile] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, authUser.id));
+  const now = Date.now();
+  const cached = profileCache.get(authUser.id);
+  let profile = cached && cached.expiresAt > now ? cached.profile : null;
+
+  if (!profile) {
+    const [fetched] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, authUser.id));
+    profile = fetched || null;
+    if (profile && profile.active) {
+      profileCache.set(authUser.id, { profile, expiresAt: now + 60 * 1000 });
+    }
+  }
 
   if (!profile || !profile.active) {
     // User profile missing or deactivated -> clear stale session

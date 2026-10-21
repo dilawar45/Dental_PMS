@@ -18,11 +18,14 @@ export class AuthenticationError extends Error {
 }
 
 export function getDefaultSecretKey(): string {
-  return (
-    process.env['NEXTAUTH_SECRET'] ||
-    process.env['JWT_SECRET'] ||
-    'super-secret-dental-jwt-key-change-in-production-2026'
-  );
+  const secret = process.env['NEXTAUTH_SECRET'] || process.env['JWT_SECRET'];
+  if (!secret) {
+    if (process.env['NODE_ENV'] === 'production') {
+      throw new AuthenticationError('FATAL: NEXTAUTH_SECRET or JWT_SECRET must be set in production');
+    }
+    return 'dev-only-secret-key-do-not-use-in-production';
+  }
+  return secret;
 }
 
 /**

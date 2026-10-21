@@ -92,6 +92,15 @@ googleWebhook.post('/google', async (c) => {
 
   const sessionKey = `google:${parsed.userPhone}`;
   const providerMode = process.env['GOOGLE_MODE'] ?? 'mock';
+  const googleSecret = process.env['GOOGLE_WEBHOOK_SECRET'] || process.env['SIMULATOR_SHARED_SECRET'];
+  const incomingSecret = c.req.header('x-google-secret') || c.req.header('x-webhook-secret') || c.req.header('x-simulator-secret');
+
+  // Enforce webhook secret in production or when running in real provider mode
+  if (process.env['NODE_ENV'] === 'production' || providerMode === 'real') {
+    if (googleSecret && incomingSecret !== googleSecret) {
+      return c.json({ error: 'Unauthorized: missing or invalid webhook authorization header' }, 401);
+    }
+  }
 
   try {
     // 1. Log inbound message to dev_outbox

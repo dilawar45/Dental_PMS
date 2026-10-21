@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { eq, and, isNull, gt, desc, ne } from 'drizzle-orm';
 import { getDefaultDb, withClinic } from '@dental-pms/db';
 import { patients, patientPasswordResets } from '@dental-pms/db/schema';
@@ -21,8 +22,9 @@ const resetPasswordSchema = z.object({
   new_password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .max(12, 'Password cannot exceed 12 characters'),
+    .max(72, 'Password cannot exceed 72 characters'),
   clinic_id: z.string().uuid('Invalid clinic ID format'),
+  token: z.string().trim().optional(),
 });
 
 export async function OPTIONS(req: Request) {
@@ -44,7 +46,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const { cnic, phone, new_password: newPassword, clinic_id: clinicId } = parsed.data;
+    const { cnic, phone, new_password: newPassword, clinic_id: clinicId, token } = parsed.data;
+
+    // Enforce token requirement in production
+    const isProd = process.env.NODE_ENV === 'production';
+    if (isProd && !token) {
+      return withCors(
+        NextResponse.json(
+          { error: 'Verification token is required to reset password.' },
+          { status: 400 }
+        ),
+        req
+      );
+    }
+
     const db = getDefaultDb();
 
     // Look up patient by cnic + phone within clinic scope
@@ -75,20 +90,29 @@ export async function POST(req: Request) {
       );
     }
 
-    // Find most recent unexpired and unconsumed reset token for this patient
+    // Hash token if supplied
+    const tokenHashToMatch = token
+      ? crypto.createHash('sha256').update(token).digest('hex')
+      : null;
+
+    // Find valid unexpired and unconsumed reset token for this patient
     const now = new Date();
     const validReset = await withClinic(db, clinicId, async (tx) => {
+      const conditions = [
+        eq(patientPasswordResets.patientId, patientRow.id),
+        eq(patientPasswordResets.clinicId, clinicId),
+        isNull(patientPasswordResets.consumedAt),
+        gt(patientPasswordResets.expiresAt, now),
+      ];
+
+      if (tokenHashToMatch) {
+        conditions.push(eq(patientPasswordResets.tokenHash, tokenHashToMatch));
+      }
+
       const [resetRecord] = await tx
         .select({ id: patientPasswordResets.id })
         .from(patientPasswordResets)
-        .where(
-          and(
-            eq(patientPasswordResets.patientId, patientRow.id),
-            eq(patientPasswordResets.clinicId, clinicId),
-            isNull(patientPasswordResets.consumedAt),
-            gt(patientPasswordResets.expiresAt, now)
-          )
-        )
+        .where(and(...conditions))
         .orderBy(desc(patientPasswordResets.createdAt))
         .limit(1);
 
@@ -98,7 +122,7 @@ export async function POST(req: Request) {
     if (!validReset) {
       return withCors(
         NextResponse.json(
-          { error: 'Verification required. Please restart the forgot-password process.' },
+          { error: 'Invalid or expired verification token. Please restart the forgot-password process.' },
           { status: 401 }
         ),
         req

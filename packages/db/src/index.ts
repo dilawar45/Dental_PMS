@@ -8,11 +8,13 @@ import * as schema from './schema/index';
  * Uses the `postgres` driver with Drizzle ORM.
  */
 export function createDb(url: string) {
+  const isLocal = url.includes('localhost') || url.includes('127.0.0.1');
   const client = postgres(url, {
-    ssl: url.includes('localhost') ? false : 'require',
+    ssl: isLocal ? false : 'require',
     max: 10,
-    idle_timeout: 20,
-    connect_timeout: 10,
+    idle_timeout: 300, // Keep idle connections open for 5 min to avoid cold TCP+TLS handshake latency
+    connect_timeout: 15,
+    max_lifetime: 60 * 30, // 30 min connection recycling
     prepare: false,
   });
   return drizzle(client, { schema });
@@ -31,14 +33,23 @@ export type ClinicTransaction = Parameters<Parameters<Database['transaction']>[0
 
 let defaultDb: Database | null = null;
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function assertUuid(value: string, name: string): void {
+  if (!UUID_REGEX.test(value)) {
+    throw new Error(`Invalid ${name} UUID: ${value}`);
+  }
+}
+
 /**
  * Get or create the singleton DB client using DATABASE_URL.
  */
 export function getDefaultDb(): Database {
   if (!defaultDb) {
-    const url =
-      process.env['DATABASE_URL'] ||
-      'postgresql://postgres.rxoqmiwuwkywxxtkyjma:PostgreDbase@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres';
+    const url = process.env['DATABASE_URL'];
+    if (!url) {
+      throw new Error('DATABASE_URL environment variable is required');
+    }
     defaultDb = createDb(url);
   }
   return defaultDb;
@@ -95,9 +106,7 @@ export async function withClinic<T>(
   }
 
   return await db.transaction(async (tx) => {
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clinicId)) {
-      throw new Error(`Invalid clinicId UUID: ${clinicId}`);
-    }
+    assertUuid(clinicId, 'clinicId');
 
     const sqlStatements = [
       `SET LOCAL ROLE authenticated;`,
@@ -105,18 +114,21 @@ export async function withClinic<T>(
     ];
 
     if (options?.actorId) {
+      assertUuid(options.actorId, 'actorId');
       sqlStatements.push(`SET LOCAL app.actor_id = '${options.actorId}';`);
     }
 
     if (options?.supportMode) {
       sqlStatements.push(`SET LOCAL app.support_mode = 'true';`);
       if (options.realActorId) {
+        assertUuid(options.realActorId, 'realActorId');
         sqlStatements.push(`SET LOCAL app.real_actor_id = '${options.realActorId}';`);
         if (!options.actorId) {
           sqlStatements.push(`SET LOCAL app.actor_id = '${options.realActorId}';`);
         }
       }
       if (options.impersonatedUserId) {
+        assertUuid(options.impersonatedUserId, 'impersonatedUserId');
         sqlStatements.push(`SET LOCAL app.impersonated_user_id = '${options.impersonatedUserId}';`);
       }
     }
@@ -164,6 +176,7 @@ export async function withPlatformAdmin<T>(
       `SET LOCAL app.is_super_admin = 'true';`,
     ];
     if (options?.actorId) {
+      assertUuid(options.actorId, 'actorId');
       sqlStatements.push(`SET LOCAL app.actor_id = '${options.actorId}';`);
     }
     await tx.execute(sql.raw(sqlStatements.join(' ')));

@@ -243,9 +243,10 @@ export async function uploadPatientFileAction(
     return { success: false, error: 'File size exceeds maximum allowed limit of 25MB' };
   }
 
-  // Validate MIME type: image/* or application/pdf
-  if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
-    return { success: false, error: 'Unsupported file format. Please upload an image or PDF.' };
+  // Validate MIME type: strict image allowlist or application/pdf (explicitly disallow SVG)
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return { success: false, error: 'Unsupported file format. Please upload a JPG, PNG, WebP image, or PDF.' };
   }
 
   const validKinds = ['xray', 'photo', 'document', 'receipt'];
@@ -254,6 +255,19 @@ export async function uploadPatientFileAction(
   }
 
   try {
+    // Verify patient belongs to current user's clinic before uploading to storage
+    const [patientRecord] = await withClinic(db, user.clinicId, async (tx: ClinicTransaction) => {
+      return await tx
+        .select({ id: patients.id })
+        .from(patients)
+        .where(and(eq(patients.id, patientId), eq(patients.clinicId, user.clinicId)))
+        .limit(1);
+    });
+
+    if (!patientRecord) {
+      return { success: false, error: 'Patient record not found in this clinic' };
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const storageKey = `patients/${patientId}/${Date.now()}_${sanitizedName}`;

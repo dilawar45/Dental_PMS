@@ -104,9 +104,13 @@ export async function POST(req: Request) {
       });
     });
 
-    // Anti-enumeration: Never return the token in the response
+    // Anti-enumeration: Never return token in production; provide in dev for local testing
+    const isDev = process.env.NODE_ENV !== 'production';
     return withCors(
-      NextResponse.json({ success: true }),
+      NextResponse.json({
+        success: true,
+        ...(isDev ? { dev_reset_token: rawToken } : {}),
+      }),
       req
     );
   } catch (error) {

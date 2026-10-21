@@ -127,6 +127,15 @@ voiceWebhook.post('/voice', async (c) => {
 
   const sessionKey = `voice:${parsed.from}`;
   const providerMode = process.env['VOICE_PROVIDER'] ?? 'mock';
+  const voiceSecret = process.env['VOICE_WEBHOOK_SECRET'] || process.env['SIMULATOR_SHARED_SECRET'];
+  const incomingSecret = c.req.header('x-voice-secret') || c.req.header('x-webhook-secret') || c.req.header('x-simulator-secret');
+
+  // Enforce webhook secret in production or when running in real provider mode
+  if (process.env['NODE_ENV'] === 'production' || providerMode === 'real') {
+    if (voiceSecret && incomingSecret !== voiceSecret) {
+      return c.json({ error: 'Unauthorized: missing or invalid webhook authorization header' }, 401);
+    }
+  }
 
   try {
     // 1. Log inbound transcribed speech to dev_outbox

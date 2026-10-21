@@ -100,9 +100,13 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return withCors(
-        NextResponse.json({ error: 'Only image files and PDFs are supported' }, { status: 400 }),
+        NextResponse.json(
+          { error: 'Unsupported file format. Only JPEG, PNG, WebP images and PDFs are permitted.' },
+          { status: 400 }
+        ),
         req
       );
     }

@@ -16,11 +16,19 @@ export class PatientAuthError extends Error {
 }
 
 export function getPatientJwtSecret(): string {
-  return (
+  const secret =
     process.env['PATIENT_JWT_SECRET'] ||
     process.env['NEXTAUTH_SECRET'] ||
-    'patient-secret-key-32-chars-minimum-dental-pms-default'
-  );
+    process.env['JWT_SECRET'];
+
+  if (!secret) {
+    if (process.env['NODE_ENV'] === 'production') {
+      throw new PatientAuthError('FATAL: PATIENT_JWT_SECRET or JWT_SECRET must be configured in production');
+    }
+    return 'dev-only-patient-secret-key-32-chars-min';
+  }
+
+  return secret;
 }
 
 /**

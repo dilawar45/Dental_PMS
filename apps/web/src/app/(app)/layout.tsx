@@ -8,15 +8,15 @@ import { SupportModeBanner } from '@/components/layout/support-mode-banner';
 import { ForcePasswordChangeModal } from '@/components/layout/force-password-change-modal';
 import { redirect } from 'next/navigation';
 
-export default async function AuthenticatedAppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const context = await requireUser();
-  const { user, clinicId, isSupportMode, realUser, supportSessionExpiresAt } = context;
+const clinicCache = new Map<string, { clinic: typeof clinics.$inferSelect; expiresAt: number }>();
 
-  // Query clinic with RLS enforced via withClinic passing support mode session options
+async function getCachedClinic(clinicId: string, context: Awaited<ReturnType<typeof requireUser>>) {
+  const now = Date.now();
+  const cached = clinicCache.get(clinicId);
+  if (cached && cached.expiresAt > now) {
+    return cached.clinic;
+  }
+
   const clinic = await withClinic(
     db,
     clinicId,
@@ -26,6 +26,24 @@ export default async function AuthenticatedAppLayout({
     },
     getClinicDbOptions(context)
   );
+
+  if (clinic) {
+    clinicCache.set(clinicId, { clinic, expiresAt: now + 5 * 60 * 1000 });
+  }
+
+  return clinic;
+}
+
+export default async function AuthenticatedAppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const context = await requireUser();
+  const { user, clinicId, isSupportMode, realUser, supportSessionExpiresAt } = context;
+
+  // Query clinic with RLS enforced or return from fast memory cache
+  const clinic = await getCachedClinic(clinicId, context);
 
   if (!clinic) {
     redirect('/login');
